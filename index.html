@@ -1,0 +1,3239 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DUCK RACE ARENA PRO 3D — by Mas Alfy (MfyTech)</title>
+    
+    <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js r128 for 3D Rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Outfit', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            950: '#040914',
+                            900: '#0A1124',
+                            800: '#111C38',
+                            700: '#1B2B52'
+                        },
+                        cyan: {
+                            DEFAULT: '#00F0FF',
+                            400: '#33F3FF',
+                            500: '#00D1FF'
+                        },
+                        duck: {
+                            DEFAULT: '#FFD700',
+                            400: '#FFE033',
+                            500: '#F5C400'
+                        },
+                        coral: {
+                            DEFAULT: '#FF5E36',
+                            500: '#FF4517'
+                        },
+                        emerald: {
+                            DEFAULT: '#10B981',
+                            400: '#34D399'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #040914;
+            color: #F8FAFC;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* Glassmorphism Panels */
+        .glass-panel {
+            background: rgba(10, 17, 36, 0.82);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 240, 255, 0.06);
+        }
+
+        .glass-card {
+            background: rgba(17, 28, 56, 0.75);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* 3D Button Game Aesthetics */
+        .btn-game {
+            position: relative;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(0);
+        }
+        .btn-game:active:not(:disabled) {
+            transform: translateY(3px);
+        }
+        .btn-yellow {
+            background: linear-gradient(180deg, #FFE548 0%, #F5B800 100%);
+            color: #040914;
+            box-shadow: 0 5px 0 #B38600, 0 8px 20px rgba(255, 215, 0, 0.35);
+        }
+        .btn-yellow:hover:not(:disabled) {
+            background: linear-gradient(180deg, #FFEB70 0%, #FFC400 100%);
+            box-shadow: 0 5px 0 #B38600, 0 10px 25px rgba(255, 215, 0, 0.5);
+        }
+        .btn-cyan {
+            background: linear-gradient(180deg, #33F3FF 0%, #00B8E6 100%);
+            color: #040914;
+            box-shadow: 0 5px 0 #007A99, 0 8px 20px rgba(0, 240, 255, 0.3);
+        }
+        .btn-coral {
+            background: linear-gradient(180deg, #FF7452 0%, #E63900 100%);
+            color: #FFFFFF;
+            box-shadow: 0 5px 0 #992600, 0 8px 20px rgba(255, 94, 54, 0.35);
+        }
+        .btn-emerald {
+            background: linear-gradient(180deg, #34D399 0%, #059669 100%);
+            color: #040914;
+            box-shadow: 0 5px 0 #065F46, 0 8px 20px rgba(16, 185, 129, 0.35);
+        }
+        .btn-navy {
+            background: linear-gradient(180deg, #1E2F5D 0%, #111C38 100%);
+            color: #F8FAFC;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 0 #070C1A, 0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Duck 3D Floating HTML Labels */
+        .duck-label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -100%);
+            pointer-events: none;
+            white-space: nowrap;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            padding: 3px 9px;
+            border-radius: 9999px;
+            font-size: 13px;
+            letter-spacing: 0.02em;
+            background: rgba(4, 9, 20, 0.88);
+            color: #FFFFFF;
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.45);
+            transition: border-color 0.2s, background-color 0.2s;
+            will-change: transform;
+        }
+        .duck-label.is-leader {
+            background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%);
+            color: #040914;
+            border-color: #FFFFFF;
+            font-size: 14px;
+            z-index: 50 !important;
+            box-shadow: 0 0 16px rgba(255, 215, 0, 0.8);
+        }
+        .duck-label.is-sprinting {
+            border-color: #00F0FF;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.7);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(4, 9, 20, 0.6);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 240, 255, 0.3);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 240, 255, 0.6);
+        }
+
+        /* Animations */
+        @keyframes pulseFast {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+        .animate-pulse-fast {
+            animation: pulseFast 0.7s infinite ease-in-out;
+        }
+        @keyframes countdownPop {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .countdown-anim {
+            animation: countdownPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden flex flex-col justify-between select-none">
+
+    <!-- 3D WebGL Canvas Container -->
+    <div id="canvas-container" class="absolute inset-0 w-full h-full z-0 cursor-grab active:cursor-grabbing"></div>
+
+    <!-- Dynamic HTML Labels Container for 3D Ducks -->
+    <div id="labels-container" class="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-hidden"></div>
+
+    <!-- 2D Confetti & FX Overlay Canvas -->
+    <canvas id="fx-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-30"></canvas>
+
+    <header class="relative z-20 w-full px-3 pt-2.5 pb-1.5 md:px-6 md:pt-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        <!-- Brand Identity -->
+        <div class="glass-panel px-3.5 py-2 rounded-2xl flex items-center gap-3 pointer-events-auto">
+            <!-- Custom SVG Duck + MfyTech Monogram Badge -->
+            <div class="relative w-11 h-11 rounded-xl bg-gradient-to-br from-duck-400 via-duck to-coral flex items-center justify-center shadow-lg border border-white/30 shrink-0">
+                <svg class="w-8 h-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M46 24C46 16.268 39.732 10 32 10C25.12 10 19.396 14.962 18.212 21.503C13.52 22.84 10 27.145 10 32.25C10 38.739 15.261 44 21.75 44H44C50.627 44 56 38.627 56 32C56 26.808 52.699 22.388 48.077 20.728L46 24Z" fill="#040914"/>
+                    <circle cx="36" cy="20" r="3.5" fill="#00F0FF"/>
+                    <path d="M46 20L57 23L46 27V20Z" fill="#FF5E36"/>
+                    <path d="M22 33C26 37 35 37 39 32" stroke="#FFD700" stroke-width="3.5" stroke-linecap="round"/>
+                </svg>
+                <span class="absolute -bottom-1 -right-1 bg-cyan text-navy-950 font-display font-black text-[9px] px-1.5 py-0.2 rounded-md border border-navy-950 shadow">3D</span>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-display font-black text-base md:text-xl tracking-tight text-white leading-none">
+                        DUCK RACE <span class="text-duck">ARENA</span> <span class="text-cyan text-xs md:text-sm font-extrabold px-1.5 py-0.5 rounded bg-cyan/15 border border-cyan/30">PRO</span>
+                    </h1>
+                </div>
+                <p class="text-[11px] md:text-xs text-slate-300 font-medium tracking-wide mt-0.5">
+                    Pick Your Winner. Feel the Race. <span class="text-cyan font-semibold hidden sm:inline">• by Mas Alfy — MfyTech</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Race Live Status Pills -->
+        <div class="glass-panel px-3 py-2 rounded-2xl flex items-center gap-2 md:gap-4 pointer-events-auto text-xs md:text-sm">
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-navy-800/90 border border-white/10" title="Jumlah Peserta Aktif">
+                <i class="fa-solid fa-users text-cyan"></i>
+                <span class="text-slate-400 hidden sm:inline">Peserta:</span>
+                <span id="stat-active-count" class="font-display font-bold text-white">12</span>
+            </div>
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-navy-800/90 border border-white/10" title="Bebek Sudah Finis / Target Pemenang">
+                <i class="fa-solid fa-flag-checkered text-duck"></i>
+                <span class="text-slate-400 hidden sm:inline">Finis:</span>
+                <span id="stat-finished-count" class="font-display font-bold text-duck">0</span>
+                <span class="text-slate-500">/</span>
+                <span id="stat-winner-slots" class="font-display font-bold text-emerald-400">3</span>
+            </div>
+            <div id="wave-badge" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-xl bg-coral/20 border border-coral/40 text-coral font-display font-bold">
+                <i class="fa-solid fa-layer-group"></i>
+                <span id="wave-badge-text">Wave 1/2</span>
+            </div>
+            <div class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-navy-950/90 border border-cyan/30 min-w-[82px] justify-center">
+                <i class="fa-solid fa-stopwatch text-cyan animate-pulse"></i>
+                <span id="stat-timer" class="font-display font-black text-cyan tracking-wider">00.0s</span>
+            </div>
+        </div>
+
+        <!-- Top Right Utility Controls -->
+        <div class="glass-panel p-1.5 rounded-2xl flex items-center gap-1.5 pointer-events-auto">
+            <button id="btn-camera-mode" class="btn-game btn-navy px-3 py-2 rounded-xl text-xs md:text-sm font-bold flex items-center gap-1.5" title="Ganti Sudut Kamera 3D">
+                <i class="fa-solid fa-video text-cyan"></i>
+                <span id="camera-mode-label" class="hidden lg:inline">TV Broadcast</span>
+            </button>
+            <button id="btn-manual-quack" class="btn-game btn-yellow px-3 py-2 rounded-xl text-xs md:text-sm font-display font-black flex items-center gap-1.5" title="Bunyikan Kwek-Kwek Bebek!">
+                <span>🦆</span>
+                <span class="hidden md:inline">KWEK!</span>
+            </button>
+            <button id="btn-quick-mute" class="btn-game btn-navy w-10 h-10 rounded-xl flex items-center justify-center text-base" title="Suara Aktif / Senyap">
+                <i id="icon-quick-mute" class="fa-solid fa-volume-high text-duck"></i>
+            </button>
+            <button id="btn-open-history" class="btn-game btn-navy w-10 h-10 rounded-xl flex items-center justify-center text-base" title="Riwayat Pemenang">
+                <i class="fa-solid fa-clock-rotate-left text-emerald-400"></i>
+            </button>
+            <button id="btn-open-settings" class="btn-game btn-cyan px-3.5 py-2 rounded-xl font-display font-extrabold text-xs md:text-sm flex items-center gap-1.5" title="Panel Pengaturan Guru & Peserta">
+                <i class="fa-solid fa-sliders"></i>
+                <span class="hidden sm:inline">PANEL GURU</span>
+            </button>
+            <button id="btn-fullscreen" class="btn-game btn-navy w-10 h-10 rounded-xl flex items-center justify-center text-base" title="Layar Penuh (IFP)">
+                <i id="icon-fullscreen" class="fa-solid fa-expand text-white"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mid-Screen Live HUD Overlay -->
+    <main class="relative z-10 flex-1 w-full pointer-events-none flex flex-col justify-between px-3 md:px-6 py-2 overflow-hidden">
+        <!-- Top Sub-Row: Live Top 5 Positions & Dynamic Commentary -->
+        <div class="flex flex-wrap items-start justify-between gap-2 w-full">
+            <!-- Live Leaderboard Box -->
+            <div id="live-leaderboard" class="glass-panel rounded-2xl p-2.5 w-48 md:w-60 pointer-events-auto transition-opacity duration-300">
+                <div class="flex items-center justify-between border-b border-white/10 pb-1.5 mb-2">
+                    <span class="font-display font-extrabold text-xs uppercase tracking-wider text-duck flex items-center gap-1.5">
+                        <i class="fa-solid fa-ranking-star"></i> Klasemen Live
+                    </span>
+                    <span id="race-progress-pct" class="font-display font-bold text-xs text-cyan">0%</span>
+                </div>
+                <div id="leaderboard-list" class="space-y-1 text-xs">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Live Action Ticker / Overtake Announcer -->
+            <div id="commentary-box" class="glass-panel px-4 py-2 rounded-full mx-auto flex items-center gap-2.5 border border-cyan/30 shadow-lg max-w-md md:max-w-xl">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
+                <p id="commentary-text" class="font-display font-bold text-xs md:text-sm text-white truncate">
+                    Siap di garis start! Tekan MULAI BALAPAN untuk memicu aksi.
+                </p>
+            </div>
+
+            <!-- Camera Touch Hint -->
+            <div class="glass-panel px-3 py-2 rounded-xl hidden xl:flex items-center gap-2 text-xs text-slate-300">
+                <i class="fa-solid fa-hand-pointer text-cyan"></i>
+                <span>Geser layar untuk rotasi kamera 3D</span>
+            </div>
+        </div>
+
+        <!-- Center Big Countdown & Dramatic Status Banner -->
+        <div id="center-overlay" class="my-auto flex flex-col items-center justify-center pointer-events-none">
+            <div id="countdown-badge" class="hidden flex-col items-center justify-center">
+                <div id="countdown-number" class="font-display font-black text-7xl md:text-9xl text-duck drop-shadow-[0_10px_25px_rgba(255,215,0,0.65)] stroke-navy-950">
+                    3
+                </div>
+                <div id="countdown-sub" class="font-display font-extrabold text-lg md:text-2xl uppercase tracking-widest text-cyan bg-navy-950/90 px-5 py-1.5 rounded-full border border-cyan/40 mt-2">
+                    Bersiap di Lintasan!
+                </div>
+            </div>
+        </div>
+
+        <!-- Track Progress Bar -->
+        <div class="w-full max-w-3xl mx-auto mb-1 pointer-events-auto">
+            <div class="glass-panel p-2 rounded-2xl flex items-center gap-3">
+                <span class="text-[11px] font-display font-bold uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                    START
+                </span>
+                <div class="relative flex-1 h-3 bg-navy-950 rounded-full overflow-hidden border border-white/10">
+                    <div id="leader-progress-bar" class="h-full bg-gradient-to-r from-cyan via-duck to-coral rounded-full transition-all duration-75" style="width: 0%"></div>
+                </div>
+                <span class="text-[11px] font-display font-bold uppercase px-2 py-0.5 rounded bg-duck/20 text-duck border border-duck/40 shrink-0 flex items-center gap-1">
+                    <i class="fa-solid fa-flag-checkered"></i> FINISH
+                </span>
+            </div>
+        </div>
+    </main>
+
+    <footer class="relative z-20 w-full px-3 pb-2 pt-1 md:px-6 flex flex-col gap-2 pointer-events-none">
+        <!-- Main Interactive Control Bar (IFP Touch Optimized) -->
+        <div class="flex flex-wrap items-center justify-center gap-2 md:gap-3 pointer-events-auto">
+            <button id="btn-start-race" class="btn-game btn-yellow px-6 py-3 md:px-8 md:py-3.5 rounded-2xl font-display font-black text-sm md:text-lg tracking-wide flex items-center gap-2.5">
+                <i class="fa-solid fa-play text-lg"></i>
+                <span id="btn-start-text">MULAI BALAPAN</span>
+            </button>
+
+            <button id="btn-pause-race" disabled class="btn-game btn-cyan px-5 py-3 md:px-6 md:py-3.5 rounded-2xl font-display font-extrabold text-sm md:text-base flex items-center gap-2 disabled:opacity-40 disabled:pointer-events-none">
+                <i id="icon-pause" class="fa-solid fa-pause"></i>
+                <span id="text-pause">PAUSE</span>
+            </button>
+
+            <button id="btn-reset-race" class="btn-game btn-coral px-5 py-3 md:px-6 md:py-3.5 rounded-2xl font-display font-extrabold text-sm md:text-base flex items-center gap-2">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>RESET</span>
+            </button>
+
+            <button id="btn-shuffle-ducks" class="btn-game btn-navy px-4 py-3 md:px-5 md:py-3.5 rounded-2xl font-display font-bold text-xs md:text-sm flex items-center gap-2" title="Acak Posisi Jalur Bebek">
+                <i class="fa-solid fa-shuffle text-cyan"></i>
+                <span class="hidden sm:inline">ACAK JALUR</span>
+            </button>
+        </div>
+
+        <!-- Mandatory Branding & Automatic Copyright Bar -->
+        <div class="glass-panel px-4 py-1.5 rounded-xl flex flex-wrap items-center justify-between gap-2 text-[11px] md:text-xs text-slate-300 pointer-events-auto">
+            <div class="flex items-center gap-2">
+                <!-- MfyTech Monogram SVG -->
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded bg-gradient-to-tr from-cyan to-duck text-navy-950 font-display font-black text-[10px]">M</span>
+                <span>© <span id="copyright-year"></span> <strong class="text-white font-display">Duck Race Arena Pro</strong></span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span>Crafted with <span class="text-coral">♥</span> by <strong class="text-duck">Mas Alfy — MfyTech</strong></span>
+                <span class="text-slate-600">|</span>
+                <a href="https://www.mfytech.my.id" target="_blank" rel="noopener noreferrer" class="text-cyan hover:underline font-semibold flex items-center gap-1">
+                    www.mfytech.my.id <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <div id="modal-settings" class="fixed inset-0 z-40 bg-navy-950/80 backdrop-blur-md hidden items-center justify-center p-3 md:p-6">
+        <div class="glass-panel w-full max-w-5xl max-h-[92vh] rounded-3xl flex flex-col overflow-hidden border border-cyan/30 shadow-2xl">
+            <!-- Modal Header -->
+            <div class="px-5 py-4 bg-navy-900/90 border-b border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-cyan/20 border border-cyan/40 flex items-center justify-center text-cyan text-lg">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-display font-black text-lg md:text-xl text-white">PANEL PENGATURAN GURU & PESERTA</h2>
+                        <p class="text-xs text-slate-400">Kelola daftar nama siswa, aturan simulasi 3D, gelombang turnamen, dan audio</p>
+                    </div>
+                </div>
+                <button id="btn-close-settings" class="btn-game btn-navy w-10 h-10 rounded-xl flex items-center justify-center text-slate-300 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="flex border-b border-white/10 bg-navy-900/50 px-5 pt-2 gap-2 overflow-x-auto">
+                <button data-tab="tab-participants" class="settings-tab active-tab px-4 py-2.5 rounded-t-xl font-display font-bold text-xs md:text-sm border-b-2 border-duck text-duck bg-white/5 flex items-center gap-2">
+                    <i class="fa-solid fa-users-gear"></i> Daftar Peserta (<span id="tab-count-badge">12</span>)
+                </button>
+                <button data-tab="tab-race-config" class="settings-tab px-4 py-2.5 rounded-t-xl font-display font-bold text-xs md:text-sm border-b-2 border-transparent text-slate-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-gauge-high"></i> Parameter Balapan & Mode
+                </button>
+                <button data-tab="tab-audio-theme" class="settings-tab px-4 py-2.5 rounded-t-xl font-display font-bold text-xs md:text-sm border-b-2 border-transparent text-slate-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-volume-high"></i> Audio & Tema Arena
+                </button>
+                <button data-tab="tab-presets" class="settings-tab px-4 py-2.5 rounded-t-xl font-display font-bold text-xs md:text-sm border-b-2 border-transparent text-slate-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-folder-open"></i> Simpan / Muat Kelas
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-5 overflow-y-auto flex-1 space-y-5">
+                <!-- TAB 1: PARTICIPANTS -->
+                <div id="tab-participants" class="tab-pane space-y-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                        <!-- Left Column: Add / Bulk Import / Generators -->
+                        <div class="lg:col-span-5 space-y-4">
+                            <!-- Single Add -->
+                            <div class="glass-card p-4 rounded-2xl space-y-2.5">
+                                <label class="block font-display font-bold text-xs uppercase tracking-wider text-cyan">Tambah Satu Peserta</label>
+                                <div class="flex gap-2">
+                                    <input id="input-single-name" type="text" placeholder="Ketik nama siswa..." class="flex-1 bg-navy-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan">
+                                    <button id="btn-add-single" class="btn-game btn-emerald px-4 py-2.5 rounded-xl font-display font-extrabold text-xs flex items-center gap-1.5 shrink-0">
+                                        <i class="fa-solid fa-plus"></i> TAMBAH
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Bulk Paste -->
+                            <div class="glass-card p-4 rounded-2xl space-y-2.5">
+                                <div class="flex items-center justify-between">
+                                    <label class="font-display font-bold text-xs uppercase tracking-wider text-duck">Tempel Banyak Nama / Spreadsheet</label>
+                                    <span class="text-[11px] text-slate-400">Pisahkan baris / koma</span>
+                                </div>
+                                <textarea id="input-bulk-names" rows="4" placeholder="Tempel daftar nama siswa dari Excel/Spreadsheet di sini..." class="w-full bg-navy-950 border border-white/15 rounded-xl p-3 text-xs md:text-sm text-white focus:outline-none focus:border-duck"></textarea>
+                                <div class="flex flex-wrap gap-2">
+                                    <button id="btn-append-bulk" class="btn-game btn-yellow flex-1 py-2.5 px-3 rounded-xl font-display font-extrabold text-xs flex items-center justify-center gap-1.5">
+                                        <i class="fa-solid fa-file-import"></i> TAMBAHKAN KE DAFTAR
+                                    </button>
+                                    <button id="btn-replace-bulk" class="btn-game btn-navy py-2.5 px-3 rounded-xl font-display font-bold text-xs text-slate-200 hover:text-white">
+                                        GANTI SEMUA
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- CSV Upload & Quick Stress-Test Presets -->
+                            <div class="glass-card p-4 rounded-2xl space-y-3">
+                                <label class="block font-display font-bold text-xs uppercase tracking-wider text-emerald-400">Impor File CSV & Simulasi Cepat</label>
+                                <div class="flex items-center gap-2">
+                                    <label for="input-csv-file" class="btn-game btn-navy flex-1 py-2.5 px-3 rounded-xl font-display font-bold text-xs text-center cursor-pointer flex items-center justify-center gap-2 border border-dashed border-cyan/40">
+                                        <i class="fa-solid fa-file-csv text-cyan text-base"></i> Pilih File CSV (UTF-8)
+                                    </label>
+                                    <input id="input-csv-file" type="file" accept=".csv,.txt" class="hidden">
+                                </div>
+                                <div class="pt-1 border-t border-white/10">
+                                    <span class="block text-[11px] text-slate-400 mb-2">Uji Kapasitas Peserta Cepat:</span>
+                                    <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                                        <button data-gen="12" class="btn-gen-sample btn-game btn-navy py-1.5 rounded-lg text-xs font-bold text-cyan">Contoh 12</button>
+                                        <button data-gen="30" class="btn-gen-sample btn-game btn-navy py-1.5 rounded-lg text-xs font-bold">30 Siswa</button>
+                                        <button data-gen="100" class="btn-gen-sample btn-game btn-navy py-1.5 rounded-lg text-xs font-bold">100 Siswa</button>
+                                        <button data-gen="300" class="btn-gen-sample btn-game btn-navy py-1.5 rounded-lg text-xs font-bold text-duck">300 Siswa</button>
+                                        <button data-gen="500" class="btn-gen-sample btn-game btn-navy py-1.5 rounded-lg text-xs font-bold text-coral">500 Siswa</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Active Participant List -->
+                        <div class="lg:col-span-7 glass-card p-4 rounded-2xl flex flex-col h-[420px]">
+                            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-white/10">
+                                <div>
+                                    <h3 class="font-display font-bold text-sm text-white">Daftar Peserta Aktif (<span id="list-total-count" class="text-cyan">12</span>)</h3>
+                                    <p class="text-[11px] text-slate-400">Klik nama untuk mengedit atau tombol tempat sampah untuk menghapus</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <button id="btn-deduplicate" class="btn-game btn-navy px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 text-duck" title="Hapus Nama Ganda">
+                                        <i class="fa-solid fa-clone"></i> Hapus Duplikat
+                                    </button>
+                                    <button id="btn-shuffle-list" class="btn-game btn-navy px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 text-cyan">
+                                        <i class="fa-solid fa-shuffle"></i> Acak
+                                    </button>
+                                    <button id="btn-clear-all" class="btn-game btn-coral px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
+                                        <i class="fa-solid fa-trash-can"></i> Kosongkan
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Search Filter -->
+                            <div class="my-2">
+                                <input id="input-filter-participants" type="text" placeholder="Cari nama peserta..." class="w-full bg-navy-950/90 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan">
+                            </div>
+
+                            <!-- Scrollable Participant Items -->
+                            <div id="participants-list-container" class="flex-1 overflow-y-auto space-y-1.5 pr-1">
+                                <!-- Populated via JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: RACE PARAMETERS & MODES -->
+                <div id="tab-race-config" class="tab-pane hidden space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Duration & Winners -->
+                        <div class="glass-card p-4 rounded-2xl space-y-4">
+                            <h3 class="font-display font-bold text-sm text-cyan uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-stopwatch"></i> Durasi & Target Pemenang
+                            </h3>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span>Target Durasi Balapan Perkiraan</span>
+                                    <span id="label-target-duration" class="text-duck">20 Detik</span>
+                                </div>
+                                <input id="input-target-duration" type="range" min="8" max="90" step="2" value="20" class="w-full accent-duck cursor-pointer">
+                                <p class="text-[11px] text-slate-400 mt-1">Panjang lintasan otomatis disesuaikan dengan kecepatan rata-rata agar balapan selesai secara alami.</p>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span>Jumlah Pemenang Dicatat</span>
+                                    <span id="label-winner-count" class="text-emerald-400">3 Juara</span>
+                                </div>
+                                <input id="input-winner-count" type="range" min="1" max="10" step="1" value="3" class="w-full accent-emerald-400 cursor-pointer">
+                            </div>
+
+                            <div class="pt-2 border-t border-white/10 flex items-center justify-between">
+                                <div>
+                                    <span class="block text-xs font-bold text-white">Hentikan Saat Pemenang Terpenuhi</span>
+                                    <span class="text-[11px] text-slate-400">Jika nonaktif, menunggu seluruh bebek mencapai garis finis</span>
+                                </div>
+                                <input id="input-stop-on-winners" type="checkbox" checked class="w-5 h-5 accent-cyan rounded cursor-pointer">
+                            </div>
+                        </div>
+
+                        <!-- Arena Mode & Large Crowd Handling -->
+                        <div class="glass-card p-4 rounded-2xl space-y-4">
+                            <h3 class="font-display font-bold text-sm text-duck uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-sitemap"></i> Mode Arena & Kapasitas Besar
+                            </h3>
+                            <div>
+                                <label class="block text-xs font-bold mb-1.5">Pilih Mode Balapan</label>
+                                <select id="select-arena-mode" class="w-full bg-navy-950 border border-white/15 rounded-xl px-3 py-2.5 text-xs md:text-sm text-white focus:outline-none focus:border-duck">
+                                    <option value="FULL">Mode A — Arena Penuh (Semua Peserta Sekaligus)</option>
+                                    <option value="COMPACT">Mode B — Compact Race (Ukuran Bebek & Label Ringkas)</option>
+                                    <option value="WAVE">Mode C — Multi-Wave Race (Gelombang Bertahap)</option>
+                                    <option value="TOURNAMENT">Mode D — Turnamen (Penyisihan → Semifinal → Final)</option>
+                                </select>
+                            </div>
+
+                            <div id="wave-config-box" class="space-y-3 pt-2 border-t border-white/10">
+                                <div>
+                                    <div class="flex justify-between text-xs font-bold mb-1">
+                                        <span>Kapasitas Bebek Maksimal per Gelombang (Wave)</span>
+                                        <span id="label-wave-size" class="text-cyan">25 Bebek</span>
+                                    </div>
+                                    <input id="input-wave-size" type="range" min="10" max="100" step="5" value="25" class="w-full accent-cyan cursor-pointer">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs font-bold mb-1">
+                                        <span>Peserta Lolos per Gelombang ke Final</span>
+                                        <span id="label-wave-advance" class="text-emerald-400">3 Bebek</span>
+                                    </div>
+                                    <input id="input-wave-advance" type="range" min="1" max="10" step="1" value="3" class="w-full accent-emerald-400 cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Overtake & Physics Dynamics -->
+                        <div class="glass-card p-4 rounded-2xl space-y-4 md:col-span-2">
+                            <h3 class="font-display font-bold text-sm text-coral uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-bolt"></i> Dinamika Saling Menyalip (Overtaking Engine)
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <div class="flex justify-between text-xs font-bold mb-1">
+                                        <span>Variasi Kecepatan & Chaos</span>
+                                        <span id="label-chaos-level" class="text-cyan">Tinggi</span>
+                                    </div>
+                                    <input id="input-chaos-level" type="range" min="1" max="3" step="1" value="2" class="w-full accent-cyan cursor-pointer">
+                                    <p class="text-[11px] text-slate-400 mt-1">Mengatur frekuensi percepatan spontan & perlambatan sesaat.</p>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs font-bold mb-1">
+                                        <span>Intensitas Sprint & Slipstream</span>
+                                        <span id="label-sprint-intensity" class="text-duck">Aktif Kuat</span>
+                                    </div>
+                                    <input id="input-sprint-intensity" type="range" min="1" max="3" step="1" value="2" class="w-full accent-duck cursor-pointer">
+                                    <p class="text-[11px] text-slate-400 mt-1">Dorongan menyalip saat bebek berada di belakang lawan.</p>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs font-bold mb-1">
+                                        <span>Peluang Comeback (Rubberband)</span>
+                                        <span id="label-comeback-boost" class="text-emerald-400">Seimbang</span>
+                                    </div>
+                                    <input id="input-comeback-boost" type="range" min="1" max="3" step="1" value="2" class="w-full accent-emerald-400 cursor-pointer">
+                                    <p class="text-[11px] text-slate-400 mt-1">Memberi peluang sprint kejutan bagi bebek yang tertinggal.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: AUDIO & THEME -->
+                <div id="tab-audio-theme" class="tab-pane hidden space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="glass-card p-4 rounded-2xl space-y-4">
+                            <h3 class="font-display font-bold text-sm text-duck uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-sliders"></i> Mixer Web Audio API
+                            </h3>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span>Master Volume</span>
+                                    <span id="label-vol-master" class="text-cyan">80%</span>
+                                </div>
+                                <input id="input-vol-master" type="range" min="0" max="100" value="80" class="w-full accent-cyan cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span>Volume Musik Latar Arena</span>
+                                    <span id="label-vol-music" class="text-duck">60%</span>
+                                </div>
+                                <input id="input-vol-music" type="range" min="0" max="100" value="60" class="w-full accent-duck cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span>Suara Kwek-Kwek Bebek & Kepakan</span>
+                                    <span id="label-vol-quack" class="text-emerald-400">90%</span>
+                                </div>
+                                <input id="input-vol-quack" type="range" min="0" max="100" value="90" class="w-full accent-emerald-400 cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span>Kepadatan Kwek-Kwek Menjelang Finis</span>
+                                    <span id="label-quack-density" class="text-duck">Sangat Ramai</span>
+                                </div>
+                                <input id="input-quack-density" type="range" min="1" max="3" step="1" value="3" class="w-full accent-duck cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span>Efek Peluit, Cipratan Air & Fanfare</span>
+                                    <span id="label-vol-sfx" class="text-coral">85%</span>
+                                </div>
+                                <input id="input-vol-sfx" type="range" min="0" max="100" value="85" class="w-full accent-coral cursor-pointer">
+                            </div>
+                            <button id="btn-test-audio" class="btn-game btn-navy w-full py-2.5 rounded-xl font-display font-bold text-xs text-cyan flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-volume-high"></i> UJI SUARA KWEK & PELUIT
+                            </button>
+                        </div>
+
+                        <div class="glass-card p-4 rounded-2xl space-y-4">
+                            <h3 class="font-display font-bold text-sm text-cyan uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-palette"></i> Tema Pencahayaan Stadion 3D & Label
+                            </h3>
+                            <div>
+                                <label class="block text-xs font-bold mb-1.5">Tema Visual Lingkungan 3D</label>
+                                <select id="select-visual-theme" class="w-full bg-navy-950 border border-white/15 rounded-xl px-3 py-2.5 text-xs md:text-sm text-white focus:outline-none focus:border-cyan">
+                                    <option value="DAYLIGHT">Tropis Cerah (Siang Hari)</option>
+                                    <option value="CYBER_NIGHT">Neon Cyber Stadium (Malam)</option>
+                                    <option value="SUNSET">Golden Sunset Arena (Sore)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold mb-1.5">Mode Tampilan Label Nama 3D</label>
+                                <select id="select-label-mode" class="w-full bg-navy-950 border border-white/15 rounded-xl px-3 py-2.5 text-xs md:text-sm text-white focus:outline-none focus:border-cyan">
+                                    <option value="ADAPTIVE">Adaptif Pintar (Semua untuk ≤40, Top 15 untuk >40)</option>
+                                    <option value="ALL">Tampilkan Semua Label Nama</option>
+                                    <option value="TOP10">Hanya Top 10 Terdepan</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: CLASS PRESETS -->
+                <div id="tab-presets" class="tab-pane hidden space-y-4">
+                    <div class="glass-card p-4 rounded-2xl space-y-3">
+                        <h3 class="font-display font-bold text-sm text-duck uppercase tracking-wider">Simpan Daftar Kelas Saat Ini</h3>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input id="input-preset-name" type="text" placeholder="Contoh: Kelas 6A - Matematika..." class="flex-1 bg-navy-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-duck">
+                            <button id="btn-save-preset" class="btn-game btn-yellow px-5 py-2.5 rounded-xl font-display font-extrabold text-xs flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-floppy-disk"></i> SIMPAN DAFTAR KELAS
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-4 rounded-2xl space-y-3">
+                        <h3 class="font-display font-bold text-sm text-cyan uppercase tracking-wider">Daftar Kelas Tersimpan</h3>
+                        <div id="saved-presets-list" class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-5 py-3.5 bg-navy-900/90 border-t border-white/10 flex items-center justify-between">
+                <span class="text-xs text-slate-400">Perubahan otomatis diterapkan ke arena 3D</span>
+                <button id="btn-apply-settings" class="btn-game btn-emerald px-6 py-2.5 rounded-xl font-display font-extrabold text-xs md:text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-check"></i> SELESAI & SIAPKAN ARENA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-results" class="fixed inset-0 z-40 bg-navy-950/85 backdrop-blur-md hidden items-center justify-center p-3 md:p-6">
+        <div class="glass-panel w-full max-w-3xl max-h-[92vh] rounded-3xl flex flex-col overflow-hidden border-2 border-duck/60 shadow-[0_0_50px_rgba(255,215,0,0.25)]">
+            <!-- Header -->
+            <div class="px-6 py-4 bg-gradient-to-r from-navy-900 via-navy-800 to-navy-900 border-b border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-duck text-navy-950 flex items-center justify-center text-xl shadow-lg">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <div>
+                        <h2 id="results-modal-title" class="font-display font-black text-xl md:text-2xl text-white tracking-tight">HASIL RESMI BALAPAN</h2>
+                        <p id="results-modal-subtitle" class="text-xs text-cyan font-semibold">Berdasarkan waktu tempuh simulasi nyata</p>
+                    </div>
+                </div>
+                <button id="btn-close-results" class="btn-game btn-navy w-10 h-10 rounded-xl flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Podium & Complete Standings -->
+            <div class="p-5 overflow-y-auto flex-1 space-y-5">
+                <!-- Top 3 Visual Podium -->
+                <div id="podium-boxes" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end pt-2">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Full Winner Table -->
+                <div class="glass-card rounded-2xl p-4 space-y-2">
+                    <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                        <h3 class="font-display font-bold text-xs uppercase tracking-wider text-slate-300">Catatan Waktu Urutan Finis</h3>
+                        <span id="results-overtake-stat" class="text-xs text-emerald-400 font-bold"></span>
+                    </div>
+                    <div id="results-table-body" class="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons + Branding -->
+            <div class="px-5 py-4 bg-navy-900/95 border-t border-white/10 flex flex-col gap-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex flex-wrap gap-2">
+                        <button id="btn-copy-results" class="btn-game btn-navy px-4 py-2.5 rounded-xl font-display font-bold text-xs flex items-center gap-2 text-cyan">
+                            <i class="fa-solid fa-copy"></i> SALIN HASIL
+                        </button>
+                        <button id="btn-results-to-settings" class="btn-game btn-navy px-4 py-2.5 rounded-xl font-display font-bold text-xs flex items-center gap-2">
+                            <i class="fa-solid fa-sliders"></i> PENGATURAN
+                        </button>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2">
+                        <button id="btn-next-wave" class="hidden btn-game btn-emerald px-6 py-2.5 rounded-xl font-display font-black text-xs md:text-sm items-center gap-2">
+                            <span>LANJUT BABAK BERIKUTNYA</span>
+                            <i class="fa-solid fa-forward-step"></i>
+                        </button>
+                        <button id="btn-race-again" class="btn-game btn-yellow px-6 py-2.5 rounded-xl font-display font-black text-xs md:text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-rotate-right"></i> BALAPAN LAGI
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mandatory Footer Inside Results Page -->
+                <div class="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between text-[11px] text-slate-400">
+                    <span>© <span class="copyright-year-dup"></span> Duck Race Arena Pro</span>
+                    <span>Crafted with <span class="text-coral">♥</span> by <strong class="text-duck">Mas Alfy — MfyTech</strong> • <a href="https://www.mfytech.my.id" target="_blank" rel="noopener noreferrer" class="text-cyan hover:underline">www.mfytech.my.id</a></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="modal-history" class="fixed inset-0 z-40 bg-navy-950/80 backdrop-blur-md hidden items-center justify-center p-3 md:p-6">
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl flex flex-col overflow-hidden border border-white/15">
+            <div class="px-5 py-4 bg-navy-900 border-b border-white/10 flex items-center justify-between">
+                <h2 class="font-display font-black text-lg text-white flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-emerald-400"></i> RIWAYAT HASIL BALAPAN
+                </h2>
+                <div class="flex items-center gap-2">
+                    <button id="btn-clear-history" class="btn-game btn-coral px-3 py-1.5 rounded-lg text-xs font-bold">Hapus Riwayat</button>
+                    <button id="btn-close-history" class="btn-game btn-navy w-9 h-9 rounded-xl flex items-center justify-center">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="history-list-container" class="p-5 overflow-y-auto flex-1 space-y-3">
+                <!-- Populated via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Non-Blocking Dialog Modal (No window.alert / window.confirm) -->
+    <div id="modal-dialog" class="fixed inset-0 z-50 bg-navy-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel max-w-md w-full rounded-2xl p-5 border border-cyan/40 space-y-4 shadow-2xl">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-duck/20 border border-duck/40 flex items-center justify-center text-duck text-lg shrink-0">
+                    <i id="dialog-icon" class="fa-solid fa-circle-info"></i>
+                </div>
+                <h3 id="dialog-title" class="font-display font-bold text-base text-white">Konfirmasi</h3>
+            </div>
+            <p id="dialog-message" class="text-xs md:text-sm text-slate-300 leading-relaxed"></p>
+            <div id="dialog-input-wrap" class="hidden">
+                <input id="dialog-input" type="text" class="w-full bg-navy-950 border border-white/20 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button id="dialog-btn-cancel" class="btn-game btn-navy px-4 py-2 rounded-xl font-display font-bold text-xs">BATAL</button>
+                <button id="dialog-btn-ok" class="btn-game btn-yellow px-5 py-2 rounded-xl font-display font-extrabold text-xs">YA, LANJUTKAN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-banner" class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 glass-panel px-4 py-2.5 rounded-full border border-cyan/50 text-xs md:text-sm font-display font-bold text-white shadow-xl transition-all duration-300 opacity-0 pointer-events-none translate-y-3 flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-message">Berhasil disimpan!</span>
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * DUCK RACE ARENA PRO 3D — MASTER ENGINE
+         * Crafted by Mas Alfy — MfyTech (https://www.mfytech.my.id)
+         * ============================================================================
+         */
+
+        // Set Automatic Copyright Year Immediately
+        const currentYear = new Date().getFullYear();
+        document.getElementById('copyright-year').textContent = currentYear;
+        document.querySelectorAll('.copyright-year-dup').forEach(el => el.textContent = currentYear);
+
+        // Default Example Names (Editable, non-hardcoded lock)
+        const DEFAULT_SAMPLE_NAMES = [
+            "Alfian", "Ainun", "Aprilita", "Delfina", "Dina", "Faiza Alya",
+            "Husnatu", "Julia", "Muhammad Fauzan", "Radhy", "Riska", "Thomas"
+        ];
+
+        // Duck Customization Palettes
+        const DUCK_COLOR_PALETTES = [
+            { body: 0xFFD700, wing: 0xF5B000, name: 'Classic Gold' },
+            { body: 0x00F0FF, wing: 0x00B8D4, name: 'Electric Cyan' },
+            { body: 0xFF5E36, wing: 0xD9381E, name: 'Coral Blaze' },
+            { body: 0x10B981, wing: 0x059669, name: 'Emerald Mint' },
+            { body: 0xA855F7, wing: 0x7E22CE, name: 'Royal Purple' },
+            { body: 0xEC4899, wing: 0xBE185D, name: 'Neon Pink' },
+            { body: 0xF8FAFC, wing: 0xCBD5E1, name: 'Pure Swan' },
+            { body: 0xF97316, wing: 0xC2410C, name: 'Sunset Orange' },
+            { body: 0x84CC16, wing: 0x4D7C0F, name: 'Lime Turbo' }
+        ];
+        const DUCK_HATS = ['NONE', 'CROWN', 'CAP', 'TOP_HAT', 'HEADBAND'];
+
+        const ModalHelper = {
+            showToast(msg) {
+                const toast = document.getElementById('toast-banner');
+                document.getElementById('toast-message').textContent = msg;
+                toast.classList.remove('opacity-0', 'translate-y-3');
+                toast.classList.add('opacity-100', 'translate-y-0');
+                clearTimeout(this._toastTimer);
+                this._toastTimer = setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-3');
+                    toast.classList.remove('opacity-100', 'translate-y-0');
+                }, 2600);
+            },
+
+            confirm({ title = 'Konfirmasi', message = '', onConfirm, onCancel, showCancel = true, inputDefault = null }) {
+                const modal = document.getElementById('modal-dialog');
+                document.getElementById('dialog-title').textContent = title;
+                document.getElementById('dialog-message').textContent = message;
+                const inputWrap = document.getElementById('dialog-input-wrap');
+                const inputEl = document.getElementById('dialog-input');
+                const btnCancel = document.getElementById('dialog-btn-cancel');
+                const btnOk = document.getElementById('dialog-btn-ok');
+
+                if (inputDefault !== null) {
+                    inputWrap.classList.remove('hidden');
+                    inputEl.value = inputDefault;
+                    setTimeout(() => inputEl.focus(), 50);
+                } else {
+                    inputWrap.classList.add('hidden');
+                }
+
+                btnCancel.style.display = showCancel ? 'inline-block' : 'none';
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                const cleanup = () => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    btnOk.onclick = null;
+                    btnCancel.onclick = null;
+                };
+
+                btnOk.onclick = () => {
+                    const val = inputDefault !== null ? inputEl.value.trim() : true;
+                    cleanup();
+                    if (onConfirm) onConfirm(val);
+                };
+                btnCancel.onclick = () => {
+                    cleanup();
+                    if (onCancel) onCancel();
+                };
+            }
+        };
+
+        class StorageManager {
+            constructor() {
+                this.KEYS = {
+                    PARTICIPANTS: 'drap_v1_participants',
+                    SETTINGS: 'drap_v1_settings',
+                    PRESETS: 'drap_v1_class_presets',
+                    HISTORY: 'drap_v1_race_history'
+                };
+                this.memoryFallback = {};
+            }
+
+            _set(key, val) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(val));
+                } catch (e) {
+                    this.memoryFallback[key] = val;
+                }
+            }
+
+            _get(key, fallback) {
+                try {
+                    const raw = localStorage.getItem(key);
+                    return raw ? JSON.parse(raw) : fallback;
+                } catch (e) {
+                    return this.memoryFallback[key] !== undefined ? this.memoryFallback[key] : fallback;
+                }
+            }
+
+            saveParticipants(list) { this._set(this.KEYS.PARTICIPANTS, list); }
+            loadParticipants() { return this._get(this.KEYS.PARTICIPANTS, null); }
+
+            saveSettings(cfg) { this._set(this.KEYS.SETTINGS, cfg); }
+            loadSettings() { return this._get(this.KEYS.SETTINGS, null); }
+
+            savePresets(presets) { this._set(this.KEYS.PRESETS, presets); }
+            loadPresets() {
+                return this._get(this.KEYS.PRESETS, [
+                    { id: 'default-1', name: 'Contoh Kelas MfyTech (12 Siswa)', names: [...DEFAULT_SAMPLE_NAMES] }
+                ]);
+            }
+
+            saveHistory(history) { this._set(this.KEYS.HISTORY, history.slice(0, 40)); }
+            loadHistory() { return this._get(this.KEYS.HISTORY, []); }
+        }
+
+        class AudioManager {
+            constructor() {
+                this.ctx = null;
+                this.isMuted = false;
+                this.volumes = {
+                    master: 0.85,
+                    music: 0.55,
+                    quack: 0.90,
+                    sfx: 0.85
+                };
+                this.quackDensity = 3; // 1 = Normal, 2 = Ramai, 3 = Sangat Ramai
+                this.activeNodes = 0;
+                this.MAX_CONCURRENT_NODES = 18;
+                this.musicTimer = null;
+                this.isMusicPlaying = false;
+                this.musicTempo = 130;
+                this.musicStep = 0;
+            }
+
+            initContext() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) {
+                        this.ctx = new AudioCtx();
+                    }
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            effectiveGain(channel) {
+                if (this.isMuted || !this.ctx) return 0;
+                return this.volumes.master * (this.volumes[channel] ?? 0.85);
+            }
+
+            playCountdownBeep(isFinalGo = false) {
+                this.initContext();
+                const gainVal = this.effectiveGain('sfx');
+                if (gainVal <= 0.01 || !this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = isFinalGo ? 'sawtooth' : 'triangle';
+                osc.frequency.setValueAtTime(isFinalGo ? 880 : 440, now);
+                if (isFinalGo) {
+                    osc.frequency.exponentialRampToValueAtTime(1320, now + 0.35);
+                }
+
+                gain.gain.setValueAtTime(gainVal * 0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + (isFinalGo ? 0.45 : 0.22));
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + (isFinalGo ? 0.46 : 0.24));
+            }
+
+            playWhistle() {
+                this.initContext();
+                const gainVal = this.effectiveGain('sfx');
+                if (gainVal <= 0.01 || !this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const lfo = this.ctx.createOscillator();
+                const lfoGain = this.ctx.createGain();
+                const mainGain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(2650, now);
+                osc.frequency.linearRampToValueAtTime(2950, now + 0.12);
+                osc.frequency.setValueAtTime(2800, now + 0.35);
+
+                lfo.frequency.value = 38;
+                lfoGain.gain.value = 180;
+                lfo.connect(lfoGain);
+                lfoGain.connect(osc.frequency);
+
+                mainGain.gain.setValueAtTime(0.01, now);
+                mainGain.gain.linearRampToValueAtTime(gainVal * 0.35, now + 0.04);
+                mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+                osc.connect(mainGain);
+                mainGain.connect(this.ctx.destination);
+                osc.start(now);
+                lfo.start(now);
+                osc.stop(now + 0.52);
+                lfo.stop(now + 0.52);
+            }
+
+            /**
+             * Realistic Nasal Cartoon Duck "KWEK-KWEK" Synthesizer
+             * Supports single quack or excited double "Kwek-Kwek!"
+             */
+            playQuack(pitchMultiplier = 1.0, isDouble = false) {
+                this.initContext();
+                const gainVal = this.effectiveGain('quack');
+                if (gainVal <= 0.01 || !this.ctx || this.activeNodes >= this.MAX_CONCURRENT_NODES) return;
+
+                const triggerSingleSyllable = (delayOffset, syllablePitch) => {
+                    if (this.activeNodes >= this.MAX_CONCURRENT_NODES) return;
+                    this.activeNodes++;
+
+                    const now = this.ctx.currentTime + delayOffset;
+                    const dur = 0.14 + Math.random() * 0.05;
+
+                    // Dual detuned sawtooth/square oscillators for rich nasal duck reed timbre
+                    const osc1 = this.ctx.createOscillator();
+                    const osc2 = this.ctx.createOscillator();
+                    osc1.type = 'sawtooth';
+                    osc2.type = 'square';
+
+                    const baseFreq = (340 + Math.random() * 85) * pitchMultiplier * syllablePitch;
+                    // "KWAA-EK" pitch contour: rises slightly then drops sharply
+                    osc1.frequency.setValueAtTime(baseFreq * 0.88, now);
+                    osc1.frequency.linearRampToValueAtTime(baseFreq * 1.18, now + dur * 0.28);
+                    osc1.frequency.exponentialRampToValueAtTime(baseFreq * 0.62, now + dur);
+
+                    osc2.frequency.setValueAtTime(baseFreq * 0.89 * 1.015, now);
+                    osc2.frequency.linearRampToValueAtTime(baseFreq * 1.18 * 1.015, now + dur * 0.28);
+                    osc2.frequency.exponentialRampToValueAtTime(baseFreq * 0.62 * 1.015, now + dur);
+
+                    // Nasal formant bandpass filter sweep ("WAAK" mouth opening)
+                    const formant1 = this.ctx.createBiquadFilter();
+                    formant1.type = 'bandpass';
+                    formant1.Q.value = 3.8;
+                    formant1.frequency.setValueAtTime(750 * pitchMultiplier, now);
+                    formant1.frequency.exponentialRampToValueAtTime(1650 * pitchMultiplier, now + dur * 0.35);
+                    formant1.frequency.exponentialRampToValueAtTime(680 * pitchMultiplier, now + dur);
+
+                    // Secondary nasal resonance peak
+                    const formant2 = this.ctx.createBiquadFilter();
+                    formant2.type = 'peaking';
+                    formant2.frequency.setValueAtTime(2100, now);
+                    formant2.Q.value = 2.0;
+                    formant2.gain.value = 8;
+
+                    const envGain = this.ctx.createGain();
+                    const peakGain = Math.min(0.55, gainVal * 0.45);
+                    envGain.gain.setValueAtTime(0.001, now);
+                    envGain.gain.linearRampToValueAtTime(peakGain, now + 0.018);
+                    envGain.gain.setValueAtTime(peakGain * 0.9, now + dur * 0.5);
+                    envGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+                    osc1.connect(formant1);
+                    osc2.connect(formant1);
+                    formant1.connect(formant2);
+                    formant2.connect(envGain);
+                    envGain.connect(this.ctx.destination);
+
+                    osc1.start(now);
+                    osc2.start(now);
+                    osc1.stop(now + dur + 0.02);
+                    osc2.stop(now + dur + 0.02);
+
+                    osc1.onended = () => {
+                        this.activeNodes = Math.max(0, this.activeNodes - 1);
+                    };
+                };
+
+                // Play first "Kwek"
+                triggerSingleSyllable(0, 1.0);
+
+                // Play second "Kwek!" if double-quack is triggered
+                if (isDouble) {
+                    triggerSingleSyllable(0.15 + Math.random() * 0.04, 1.08);
+                }
+            }
+
+            /**
+             * Play an excited burst of multiple ducks quacking together
+             */
+            playQuackChorus(count = 4, basePitch = 1.05) {
+                for (let i = 0; i < count; i++) {
+                    setTimeout(() => {
+                        if (!this.isMuted) {
+                            const pitch = basePitch + (Math.random() - 0.4) * 0.35;
+                            this.playQuack(pitch, Math.random() < 0.65);
+                        }
+                    }, i * (65 + Math.random() * 75));
+                }
+            }
+
+            playSplash() {
+                this.initContext();
+                const gainVal = this.effectiveGain('sfx');
+                if (gainVal <= 0.01 || !this.ctx || this.activeNodes >= this.MAX_CONCURRENT_NODES) return;
+
+                this.activeNodes++;
+                const now = this.ctx.currentTime;
+                const bufferSize = this.ctx.sampleRate * 0.15;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.4));
+                }
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = 1100 + Math.random() * 600;
+                filter.Q.value = 1.5;
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(gainVal * 0.16, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                noise.start(now);
+                noise.onended = () => { this.activeNodes = Math.max(0, this.activeNodes - 1); };
+            }
+
+            playSprintWhoosh() {
+                this.initContext();
+                const gainVal = this.effectiveGain('sfx');
+                if (gainVal <= 0.01 || !this.ctx || this.activeNodes >= this.MAX_CONCURRENT_NODES) return;
+
+                this.activeNodes++;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(240, now);
+                osc.frequency.exponentialRampToValueAtTime(680, now + 0.22);
+
+                gain.gain.setValueAtTime(gainVal * 0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+                osc.onended = () => { this.activeNodes = Math.max(0, this.activeNodes - 1); };
+            }
+
+            playVictoryFanfare() {
+                this.initContext();
+                const gainVal = this.effectiveGain('sfx');
+                if (gainVal <= 0.01 || !this.ctx) return;
+
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                const now = this.ctx.currentTime;
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    const start = now + idx * 0.11;
+                    const dur = idx === notes.length - 1 ? 0.55 : 0.18;
+                    osc.frequency.setValueAtTime(freq, start);
+                    gain.gain.setValueAtTime(gainVal * 0.3, start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(start);
+                    osc.stop(start + dur + 0.02);
+                });
+            }
+
+            startBackgroundMusic(isFinalStretch = false) {
+                this.initContext();
+                this.stopBackgroundMusic();
+                this.isMusicPlaying = true;
+                const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 392.00, 329.63, 293.66];
+                const intervalMs = isFinalStretch ? 160 : 220;
+
+                this.musicTimer = setInterval(() => {
+                    if (!this.isMusicPlaying || this.isMuted || !this.ctx) return;
+                    const gainVal = this.effectiveGain('music');
+                    if (gainVal <= 0.01) return;
+
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    const freq = notes[this.musicStep % notes.length] * (isFinalStretch ? 1.25 : 1.0);
+                    this.musicStep++;
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now);
+                    gain.gain.setValueAtTime(gainVal * 0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                }, intervalMs);
+            }
+
+            stopBackgroundMusic() {
+                this.isMusicPlaying = false;
+                if (this.musicTimer) {
+                    clearInterval(this.musicTimer);
+                    this.musicTimer = null;
+                }
+            }
+        }
+
+        class ParticipantManager {
+            constructor(storage) {
+                this.storage = storage;
+                const saved = this.storage.loadParticipants();
+                this.participants = (saved && Array.isArray(saved) && saved.length > 0)
+                    ? saved
+                    : DEFAULT_SAMPLE_NAMES.map((name, idx) => this._createEntry(name, idx));
+            }
+
+            _createEntry(name, index = 0) {
+                const cleanName = String(name).replace(/\s+/g, ' ').trim().slice(0, 60);
+                return {
+                    id: 'duck_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) + '_' + index,
+                    name: cleanName,
+                    paletteIndex: index % DUCK_COLOR_PALETTES.length,
+                    hatType: DUCK_HATS[index % DUCK_HATS.length]
+                };
+            }
+
+            getAll() {
+                return this.participants;
+            }
+
+            addOne(name) {
+                const trimmed = String(name || '').trim();
+                if (!trimmed) return false;
+                this.participants.push(this._createEntry(trimmed, this.participants.length));
+                this.save();
+                return true;
+            }
+
+            addBulk(rawText, replaceAll = false) {
+                const lines = String(rawText || '')
+                    .split(/[\r\n,;]+/)
+                    .map(s => s.trim())
+                    .filter(Boolean);
+                if (lines.length === 0) return 0;
+
+                if (replaceAll) {
+                    this.participants = [];
+                }
+                lines.forEach((name, idx) => {
+                    this.participants.push(this._createEntry(name, this.participants.length + idx));
+                });
+                this.save();
+                return lines.length;
+            }
+
+            updateName(id, newName) {
+                const trimmed = String(newName || '').trim();
+                if (!trimmed) return false;
+                const item = this.participants.find(p => p.id === id);
+                if (item) {
+                    item.name = trimmed.slice(0, 60);
+                    this.save();
+                    return true;
+                }
+                return false;
+            }
+
+            removeOne(id) {
+                this.participants = this.participants.filter(p => p.id !== id);
+                this.save();
+            }
+
+            removeDuplicates() {
+                const seen = new Set();
+                const before = this.participants.length;
+                this.participants = this.participants.filter(p => {
+                    const key = p.name.toLowerCase();
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+                this.save();
+                return before - this.participants.length;
+            }
+
+            shuffle() {
+                for (let i = this.participants.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.participants[i], this.participants[j]] = [this.participants[j], this.participants[i]];
+                }
+                this.save();
+            }
+
+            generateSampleCount(count) {
+                this.participants = [];
+                for (let i = 0; i < count; i++) {
+                    const baseName = DEFAULT_SAMPLE_NAMES[i % DEFAULT_SAMPLE_NAMES.length];
+                    const label = count <= 12 ? baseName : `${baseName} #${i + 1}`;
+                    this.participants.push(this._createEntry(label, i));
+                }
+                this.save();
+            }
+
+            save() {
+                this.storage.saveParticipants(this.participants);
+            }
+        }
+
+        class RaceSimulation {
+            constructor() {
+                this.racers = [];
+                this.elapsedTime = 0;
+                this.totalLeadChanges = 0;
+                this.totalOvertakes = 0;
+                this.currentLeaderId = null;
+                this.finishedOrder = [];
+                this.finalStretchTriggered = false;
+                this.ambientQuackCooldown = 0.25;
+            }
+
+            initRacers(participantSubset, settings) {
+                this.elapsedTime = 0;
+                this.totalLeadChanges = 0;
+                this.totalOvertakes = 0;
+                this.currentLeaderId = null;
+                this.finishedOrder = [];
+                this.finalStretchTriggered = false;
+                this.ambientQuackCooldown = 0.25;
+
+                const total = participantSubset.length;
+                const baseSpeed = 1.0 / Math.max(6, settings.targetDuration);
+
+                this.racers = participantSubset.map((p, idx) => {
+                    // Distribute across 3D river width (-0.88 to +0.88 normalized)
+                    const normalizedLane = total === 1 ? 0 : ((idx / (total - 1)) * 2 - 1) * 0.86;
+                    return {
+                        id: p.id,
+                        name: p.name,
+                        paletteIndex: p.paletteIndex ?? (idx % DUCK_COLOR_PALETTES.length),
+                        hatType: p.hatType ?? 'NONE',
+                        progress: 0, // 0 = Start Line, 1 = Finish Line
+                        baseSpeed: baseSpeed,
+                        currentSpeed: baseSpeed * (0.85 + Math.random() * 0.3),
+                        targetSpeed: baseSpeed * (0.9 + Math.random() * 0.25),
+                        acceleration: baseSpeed * 1.4,
+                        decisionTimer: 0.4 + Math.random() * 0.9,
+                        lateralBase: normalizedLane,
+                        lateralOffset: normalizedLane,
+                        targetLateral: normalizedLane,
+                        swayPhase: Math.random() * Math.PI * 2,
+                        bobPhase: Math.random() * Math.PI * 2,
+                        wingPhase: Math.random() * Math.PI * 2,
+                        quackTimer: 0,
+                        expression: 'NORMAL', // NORMAL, SPRINT, TIRED, WINNER
+                        isSprinting: false,
+                        finished: false,
+                        finishTime: null,
+                        finishRank: null,
+                        currentRank: idx + 1
+                    };
+                });
+            }
+
+            step(dt, settings, audioManager, onCommentary) {
+                // Clamp dt for low-FPS stability so physics never explodes
+                const safeDt = Math.min(dt, 0.08);
+                this.elapsedTime += safeDt;
+
+                const chaosFactor = [0.22, 0.38, 0.55][ (settings.chaosLevel || 2) - 1 ];
+                const sprintBoostStrength = [1.28, 1.52, 1.78][ (settings.sprintIntensity || 2) - 1 ];
+                const comebackFactor = [0.18, 0.35, 0.52][ (settings.comebackBoost || 2) - 1 ];
+
+                // Find current leader and trailing progress among unfinished racers
+                let maxProg = 0;
+                let minProg = 1;
+                this.racers.forEach(r => {
+                    if (!r.finished) {
+                        if (r.progress > maxProg) maxProg = r.progress;
+                        if (r.progress < minProg) minProg = r.progress;
+                    } else {
+                        maxProg = Math.max(maxProg, 1.0);
+                    }
+                });
+
+                // Trigger Final Stretch excitement when leader reaches 78%
+                if (!this.finalStretchTriggered && maxProg >= 0.78) {
+                    this.finalStretchTriggered = true;
+                    audioManager.startBackgroundMusic(true);
+                    audioManager.playQuackChorus(5, 1.18);
+                    if (onCommentary) {
+                        onCommentary('🔥 ZONA KRITIS! Suara Kwek-Kwek makin riuh menjelang garis FINISH!');
+                    }
+                }
+
+                // PROGRESSIVE QUACK SCHEDULER:
+                // Semakin dekat pemimpin balapan ke garis finish (maxProg: 0 -> 1),
+                // semakin sering, rapat, dan nyaring bebek-bebek berbunyi "Kwek-Kwek!".
+                this.ambientQuackCooldown -= safeDt;
+                if (this.ambientQuackCooldown <= 0) {
+                    const densitySetting = audioManager.quackDensity || 3;
+                    const densityMult = [0.65, 1.0, 1.45][densitySetting - 1] || 1.2;
+
+                    // Quadratic escalation: calm at start (0.45s gap) -> frantic near finish (0.065s gap)
+                    const excitementCurve = Math.pow(Math.min(1, Math.max(0, maxProg)), 1.65);
+                    const minInterval = (0.42 - excitementCurve * 0.35) / densityMult;
+                    const randomJitter = Math.random() * (0.22 * (1.0 - excitementCurve * 0.75));
+                    this.ambientQuackCooldown = Math.max(0.055, minInterval + randomJitter);
+
+                    // Pick an active racing duck to quack & animate its beak open
+                    const activeDucks = this.racers.filter(r => !r.finished);
+                    if (activeDucks.length > 0) {
+                        const speaker = activeDucks[Math.floor(Math.random() * activeDucks.length)];
+                        speaker.quackTimer = 0.32;
+
+                        // Higher pitch and higher chance of double "Kwek-Kwek!" as they get closer to finish
+                        const dynamicPitch = 0.92 + excitementCurve * 0.32 + (Math.random() - 0.5) * 0.18;
+                        const isDoubleQuack = Math.random() < (0.25 + excitementCurve * 0.65);
+                        audioManager.playQuack(dynamicPitch, isDoubleQuack);
+
+                        // In final 25% of the track, extra ducks join in simultaneously!
+                        if (maxProg > 0.72 && activeDucks.length > 1 && Math.random() < excitementCurve * 0.65) {
+                            const secondSpeaker = activeDucks[Math.floor(Math.random() * activeDucks.length)];
+                            secondSpeaker.quackTimer = 0.35;
+                            setTimeout(() => {
+                                audioManager.playQuack(dynamicPitch * 1.08, true);
+                            }, 55);
+                        }
+                    }
+                }
+
+                // Update each duck independently
+                for (let i = 0; i < this.racers.length; i++) {
+                    const duck = this.racers[i];
+
+                    // Animate body bobbing and wing flapping continuously
+                    const speedRatio = duck.currentSpeed / duck.baseSpeed;
+                    duck.bobPhase += safeDt * (5.5 + speedRatio * 4.5);
+                    duck.wingPhase += safeDt * (9.0 + (duck.isSprinting ? 14.0 : speedRatio * 5.0));
+                    duck.swayPhase += safeDt * 2.4;
+                    if (duck.quackTimer > 0) duck.quackTimer -= safeDt;
+
+                    if (duck.finished) {
+                        // Gently coast past the finish line
+                        duck.progress = Math.min(1.09, duck.progress + duck.baseSpeed * 0.35 * safeDt);
+                        continue;
+                    }
+
+                    // Decision engine: re-evaluate target velocity & overtaking behavior
+                    duck.decisionTimer -= safeDt;
+                    if (duck.decisionTimer <= 0) {
+                        duck.decisionTimer = 0.45 + Math.random() * 0.85;
+
+                        const gapToLeader = Math.max(0, maxProg - duck.progress);
+                        const roll = Math.random();
+
+                        // 1. Check slipstream / drafting behind a nearby duck ahead
+                        let draftingBoost = 1.0;
+                        for (let j = 0; j < this.racers.length; j++) {
+                            if (i === j) continue;
+                            const other = this.racers[j];
+                            const distAhead = other.progress - duck.progress;
+                            const latDist = Math.abs(other.lateralOffset - duck.lateralOffset);
+                            if (distAhead > 0.01 && distAhead < 0.065 && latDist < 0.22) {
+                                draftingBoost = 1.22;
+                                // Steer slightly left or right to visually overtake
+                                const dodgeDir = duck.lateralOffset > 0 ? -0.14 : 0.14;
+                                duck.targetLateral = Math.max(-0.9, Math.min(0.9, duck.lateralBase + dodgeDir));
+                                break;
+                            }
+                        }
+
+                        // 2. Determine state: Sprint, Stumble/Fatigue, Comeback Surge, or Cruising
+                        const comebackChance = gapToLeader > 0.12 ? comebackFactor * 0.45 : 0.08;
+                        const leaderFatigueChance = (gapToLeader < 0.015 && duck.progress > 0.22) ? 0.32 : 0.14;
+
+                        if (roll < comebackChance) {
+                            // Dramatic Comeback Sprint!
+                            duck.targetSpeed = duck.baseSpeed * sprintBoostStrength * draftingBoost;
+                            duck.isSprinting = true;
+                            duck.expression = 'SPRINT';
+                            duck.quackTimer = 0.4;
+                            if (Math.random() < 0.35) audioManager.playSprintWhoosh();
+                            if (Math.random() < 0.55) audioManager.playQuack(1.15 + maxProg * 0.15, true);
+                        } else if (roll < comebackChance + 0.20) {
+                            // Spontaneous Speed Burst
+                            duck.targetSpeed = duck.baseSpeed * (1.18 + Math.random() * chaosFactor) * draftingBoost;
+                            duck.isSprinting = true;
+                            duck.expression = 'SPRINT';
+                            duck.quackTimer = 0.3;
+                            if (Math.random() < 0.35) audioManager.playQuack(1.0 + maxProg * 0.2, maxProg > 0.5);
+                        } else if (roll < comebackChance + 0.20 + leaderFatigueChance) {
+                            // Brief Momentary Slowdown / Fatigue
+                            duck.targetSpeed = duck.baseSpeed * (0.58 + Math.random() * 0.22);
+                            duck.isSprinting = false;
+                            duck.expression = 'TIRED';
+                        } else {
+                            // Active Varied Swimming
+                            duck.targetSpeed = duck.baseSpeed * (0.86 + Math.random() * chaosFactor) * draftingBoost;
+                            duck.isSprinting = false;
+                            duck.expression = 'NORMAL';
+                        }
+
+                        // Final 15% photo-finish drama
+                        if (duck.progress > 0.82 && Math.random() < 0.45) {
+                            duck.targetSpeed *= 1.24;
+                            duck.isSprinting = true;
+                            duck.expression = 'SPRINT';
+                        }
+                    }
+
+                    // Smoothly accelerate/decelerate toward targetSpeed
+                    const speedDiff = duck.targetSpeed - duck.currentSpeed;
+                    duck.currentSpeed += speedDiff * Math.min(1, safeDt * 3.8);
+
+                    // Clamp realistic minimum and maximum speeds
+                    const minAllowed = duck.baseSpeed * 0.48;
+                    const maxAllowed = duck.baseSpeed * 2.15;
+                    duck.currentSpeed = Math.max(minAllowed, Math.min(maxAllowed, duck.currentSpeed));
+
+                    // Smooth lateral lane weaving
+                    duck.lateralOffset += (duck.targetLateral - duck.lateralOffset) * Math.min(1, safeDt * 2.5);
+
+                    // Advance normalized progress along track
+                    const prevProgress = duck.progress;
+                    duck.progress += duck.currentSpeed * safeDt;
+
+                    // Occasional ambient splash or quack
+                    if (Math.random() < safeDt * 0.35) {
+                        audioManager.playSplash();
+                    }
+
+                    // Check exact crossing of Finish Line (progress >= 1.0)
+                    if (prevProgress < 1.0 && duck.progress >= 1.0) {
+                        const fraction = (1.0 - prevProgress) / Math.max(0.00001, duck.progress - prevProgress);
+                        const exactFinishTime = this.elapsedTime - safeDt * (1.0 - fraction);
+                        duck.finished = true;
+                        duck.finishTime = Math.max(0.1, exactFinishTime);
+                        duck.expression = 'WINNER';
+                        duck.isSprinting = false;
+                        this.finishedOrder.push(duck);
+                        duck.finishRank = this.finishedOrder.length;
+
+                        duck.quackTimer = 0.55;
+                        audioManager.playQuack(1.28, true);
+                        if (duck.finishRank === 1) {
+                            audioManager.playVictoryFanfare();
+                            audioManager.playQuackChorus(4, 1.22);
+                        }
+                    }
+                }
+
+                // Sort rankings accurately: finished ducks by finishRank, unfinished by descending progress
+                const sorted = [...this.racers].sort((a, b) => {
+                    if (a.finished && b.finished) return a.finishRank - b.finishRank;
+                    if (a.finished) return -1;
+                    if (b.finished) return 1;
+                    return b.progress - a.progress;
+                });
+
+                // Detect overtakes & lead changes for live commentary
+                sorted.forEach((duck, idx) => {
+                    const newRank = idx + 1;
+                    if (newRank < duck.currentRank) {
+                        this.totalOvertakes += (duck.currentRank - newRank);
+                    }
+                    duck.currentRank = newRank;
+                });
+
+                const leader = sorted[0];
+                if (leader && leader.id !== this.currentLeaderId) {
+                    const hadPreviousLeader = this.currentLeaderId !== null;
+                    this.currentLeaderId = leader.id;
+                    if (hadPreviousLeader && !leader.finished) {
+                        this.totalLeadChanges++;
+                        if (onCommentary) {
+                            onCommentary(`⚡ SALIPAN TAJAM! ${leader.name} merebut posisi #1 memimpin balapan!`);
+                        }
+                    }
+                }
+
+                return {
+                    sortedRacers: sorted,
+                    finishedCount: this.finishedOrder.length,
+                    leaderProgress: leader ? Math.min(1, leader.progress) : 0
+                };
+            }
+        }
+
+        class DuckRenderer3D {
+            constructor(containerEl, labelsContainerEl) {
+                this.container = containerEl;
+                this.labelsContainer = labelsContainerEl;
+
+                this.TRACK_START_X = 0;
+                this.TRACK_LENGTH = 260;
+                this.RIVER_WIDTH = 56;
+
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 900);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.container.appendChild(this.renderer.domElement);
+
+                this.duckMeshes = new Map();
+                this.duckLabels = new Map();
+                this.splashParticles = [];
+                this.waterMesh = null;
+                this.buoyMeshes = [];
+
+                // Camera Tracking & User Orbit Controls
+                this.cameraModes = ['BROADCAST', 'DRONE_TOP', 'CLOSE_ACTION', 'FINISH_CAM'];
+                this.cameraModeIndex = 0;
+                this.cameraLookTarget = new THREE.Vector3(15, 1, 0);
+                this.userOrbit = {
+                    isDragging: false,
+                    prevX: 0,
+                    prevY: 0,
+                    yawOffset: 0,
+                    pitchOffset: 0
+                };
+
+                this._setupSharedMaterials();
+                this._buildEnvironment();
+                this._initSplashPool();
+                this._bindCameraInput();
+
+                window.addEventListener('resize', () => this.onResize());
+            }
+
+            _setupSharedMaterials() {
+                this.beakMat = new THREE.MeshStandardMaterial({ color: 0xFF6B2B, roughness: 0.35 });
+                this.eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                this.eyePupilMat = new THREE.MeshBasicMaterial({ color: 0x040914 });
+                this.crownMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, metalness: 0.65, roughness: 0.25 });
+                this.darkHatMat = new THREE.MeshStandardMaterial({ color: 0x111C38, roughness: 0.4 });
+                this.cyanGlowMat = new THREE.MeshBasicMaterial({ color: 0x00F0FF });
+            }
+
+            _buildEnvironment() {
+                // Default Daylight Theme
+                this.scene.background = new THREE.Color(0x0B192C);
+                this.scene.fog = new THREE.FogExp2(0x0B192C, 0.0022);
+
+                // Lighting
+                this.ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.72);
+                this.scene.add(this.ambientLight);
+
+                this.sunLight = new THREE.DirectionalLight(0xFFFBEB, 1.15);
+                this.sunLight.position.set(110, 140, 85);
+                this.sunLight.castShadow = true;
+                this.sunLight.shadow.mapSize.width = 1024;
+                this.sunLight.shadow.mapSize.height = 1024;
+                this.sunLight.shadow.camera.near = 10;
+                this.sunLight.shadow.camera.far = 400;
+                const d = 95;
+                this.sunLight.shadow.camera.left = -d;
+                this.sunLight.shadow.camera.right = d;
+                this.sunLight.shadow.camera.top = d;
+                this.sunLight.shadow.camera.bottom = -d;
+                this.scene.add(this.sunLight);
+
+                // 3D River Water Surface
+                const waterGeo = new THREE.PlaneGeometry(this.TRACK_LENGTH + 140, this.RIVER_WIDTH, 96, 28);
+                waterGeo.rotateX(-Math.PI / 2);
+                this.waterMat = new THREE.MeshStandardMaterial({
+                    color: 0x0284C7,
+                    roughness: 0.18,
+                    metalness: 0.15,
+                    FlatShading: true
+                });
+                this.waterMesh = new THREE.Mesh(waterGeo, this.waterMesh ? this.waterMesh.material : this.waterMat);
+                this.waterMesh.position.set(this.TRACK_LENGTH / 2, -0.35, 0);
+                this.waterMesh.receiveShadow = true;
+                this.scene.add(this.waterMesh);
+
+                // Stadium River Banks (Left & Right)
+                const bankGeo = new THREE.BoxGeometry(this.TRACK_LENGTH + 140, 4.5, 16);
+                const bankMat = new THREE.MeshStandardMaterial({ color: 0x0F172A, roughness: 0.7 });
+                const leftBank = new THREE.Mesh(bankGeo, bankMat);
+                leftBank.position.set(this.TRACK_LENGTH / 2, 1.4, -(this.RIVER_WIDTH / 2 + 8));
+                leftBank.receiveShadow = true;
+                this.scene.add(leftBank);
+
+                const rightBank = new THREE.Mesh(bankGeo, bankMat);
+                rightBank.position.set(this.TRACK_LENGTH / 2, 1.4, (this.RIVER_WIDTH / 2 + 8));
+                rightBank.receiveShadow = true;
+                this.scene.add(rightBank);
+
+                // Neon Trim Strips along River Banks
+                const trimGeo = new THREE.BoxGeometry(this.TRACK_LENGTH + 120, 0.4, 0.5);
+                const leftTrim = new THREE.Mesh(trimGeo, this.cyanGlowMat);
+                leftTrim.position.set(this.TRACK_LENGTH / 2, 3.6, -(this.RIVER_WIDTH / 2 + 0.2));
+                this.scene.add(leftTrim);
+
+                const rightTrim = new THREE.Mesh(trimGeo, this.cyanGlowMat);
+                rightTrim.position.set(this.TRACK_LENGTH / 2, 3.6, (this.RIVER_WIDTH / 2 + 0.2));
+                this.scene.add(rightTrim);
+
+                // Floating Lane Buoys & Distance Markers
+                const buoyGeo = new THREE.SphereGeometry(0.65, 12, 12);
+                const buoyYellow = new THREE.MeshStandardMaterial({ color: 0xFFD700 });
+                const buoyCoral = new THREE.MeshStandardMaterial({ color: 0xFF5E36 });
+
+                for (let x = 0; x <= this.TRACK_LENGTH; x += 10) {
+                    const mat = (x / 10) % 2 === 0 ? buoyYellow : buoyCoral;
+                    const bLeft = new THREE.Mesh(buoyGeo, mat);
+                    bLeft.position.set(x, -0.1, -(this.RIVER_WIDTH / 2 - 1.5));
+                    this.scene.add(bLeft);
+                    this.buoyMeshes.push(bLeft);
+
+                    const bRight = new THREE.Mesh(buoyGeo, mat);
+                    bRight.position.set(x, -0.1, (this.RIVER_WIDTH / 2 - 1.5));
+                    this.scene.add(bRight);
+                    this.buoyMeshes.push(bRight);
+                }
+
+                // Build Start Gate (x = 0) & Finish Archway (x = TRACK_LENGTH)
+                this._buildGateArch(0, 0x10B981, false);
+                this._buildGateArch(this.TRACK_LENGTH, 0xFFD700, true);
+            }
+
+            _buildGateArch(xPos, accentHex, isFinish) {
+                const group = new THREE.Group();
+                group.position.set(xPos, 0, 0);
+
+                const pillarGeo = new THREE.CylinderGeometry(1.1, 1.3, 19, 16);
+                const pillarMat = new THREE.MeshStandardMaterial({ color: accentHex, roughness: 0.3 });
+
+                const leftPillar = new THREE.Mesh(pillarGeo, pillarMat);
+                leftPillar.position.set(0, 9.5, -(this.RIVER_WIDTH / 2 + 2));
+                leftPillar.castShadow = true;
+                group.add(leftPillar);
+
+                const rightPillar = new THREE.Mesh(pillarGeo, pillarMat);
+                rightPillar.position.set(0, 9.5, (this.RIVER_WIDTH / 2 + 2));
+                rightPillar.castShadow = true;
+                group.add(rightPillar);
+
+                // Overhead Crossbar Banner
+                const span = this.RIVER_WIDTH + 6;
+                const barGeo = new THREE.BoxGeometry(2.2, 3.2, span);
+                const barMat = new THREE.MeshStandardMaterial({ color: 0x0A1124, roughness: 0.4 });
+                const topBar = new THREE.Mesh(barGeo, barMat);
+                topBar.position.set(0, 18.2, 0);
+                group.add(topBar);
+
+                // Checkered blocks on finish gate
+                if (isFinish) {
+                    const numBlocks = 18;
+                    const stepZ = span / numBlocks;
+                    const blkGeo = new THREE.BoxGeometry(2.4, 1.4, stepZ * 0.92);
+                    const whiteMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                    const goldMat = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+                    for (let i = 0; i < numBlocks; i++) {
+                        const blk = new THREE.Mesh(blkGeo, i % 2 === 0 ? whiteMat : goldMat);
+                        blk.position.set(0, 18.2 + (i % 2 === 0 ? 0.6 : -0.6), -span / 2 + stepZ * (i + 0.5));
+                        group.add(blk);
+                    }
+                }
+
+                // Water Surface Line Strip
+                const lineGeo = new THREE.PlaneGeometry(1.8, this.RIVER_WIDTH - 2);
+                lineGeo.rotateX(-Math.PI / 2);
+                const lineMat = new THREE.MeshBasicMaterial({
+                    color: accentHex,
+                    transparent: true,
+                    opacity: 0.85
+                });
+                const surfaceLine = new THREE.Mesh(lineGeo, lineMat);
+                surfaceLine.position.set(0, -0.18, 0);
+                group.add(surfaceLine);
+
+                this.scene.add(group);
+            }
+
+            _initSplashPool() {
+                const geo = new THREE.SphereGeometry(0.28, 6, 6);
+                const mat = new THREE.MeshBasicMaterial({ color: 0xE0F2FE, transparent: true, opacity: 0.85 });
+                for (let i = 0; i < 90; i++) {
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.visible = false;
+                    this.scene.add(mesh);
+                    this.splashParticles.push({
+                        mesh,
+                        active: false,
+                        vx: 0, vy: 0, vz: 0,
+                        life: 0
+                    });
+                }
+            }
+
+            spawnSplash(x, z, intensity = 1) {
+                for (let i = 0; i < this.splashParticles.length; i++) {
+                    const p = this.splashParticles[i];
+                    if (!p.active) {
+                        p.active = true;
+                        p.life = 0.35 + Math.random() * 0.25;
+                        p.mesh.visible = true;
+                        p.mesh.position.set(x - 1.2, 0.1, z + (Math.random() - 0.5) * 1.2);
+                        p.vx = -(2.5 + Math.random() * 3.5) * intensity;
+                        p.vy = (2.8 + Math.random() * 3.2) * intensity;
+                        p.vz = (Math.random() - 0.5) * 3.0;
+                        break;
+                    }
+                }
+            }
+
+            setTheme(themeKey) {
+                if (themeKey === 'CYBER_NIGHT') {
+                    this.scene.background.setHex(0x040814);
+                    this.scene.fog.color.setHex(0x040814);
+                    this.waterMat.color.setHex(0x063970);
+                    this.ambientLight.intensity = 0.48;
+                    this.sunLight.intensity = 0.85;
+                    this.sunLight.color.setHex(0x38BDF8);
+                } else if (themeKey === 'SUNSET') {
+                    this.scene.background.setHex(0x2A1225);
+                    this.scene.fog.color.setHex(0x2A1225);
+                    this.waterMat.color.setHex(0x0369A1);
+                    this.ambientLight.intensity = 0.65;
+                    this.sunLight.intensity = 1.2;
+                    this.sunLight.color.setHex(0xFDBA74);
+                } else {
+                    // DAYLIGHT
+                    this.scene.background.setHex(0x0D233A);
+                    this.scene.fog.color.setHex(0x0D233A);
+                    this.waterMat.color.setHex(0x0284C7);
+                    this.ambientLight.intensity = 0.8;
+                    this.sunLight.intensity = 1.2;
+                    this.sunLight.color.setHex(0xFFFBEB);
+                }
+            }
+
+            _createDuck3DMesh(racer, scaleMultiplier = 1.0) {
+                const palette = DUCK_COLOR_PALETTES[racer.paletteIndex % DUCK_COLOR_PALETTES.length];
+                const bodyMat = new THREE.MeshStandardMaterial({ color: palette.body, roughness: 0.32 });
+                const wingMat = new THREE.MeshStandardMaterial({ color: palette.wing, roughness: 0.38 });
+
+                const root = new THREE.Group();
+                root.scale.setScalar(scaleMultiplier);
+
+                // Inner animated rig
+                const rig = new THREE.Group();
+                root.add(rig);
+
+                // Plump Cartoon Body
+                const bodyGeo = new THREE.SphereGeometry(1.15, 16, 14);
+                bodyGeo.scale(1.38, 0.88, 0.96);
+                const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+                bodyMesh.position.y = 0.55;
+                bodyMesh.castShadow = true;
+                rig.add(bodyMesh);
+
+                // Cute Tail Feather
+                const tailGeo = new THREE.ConeGeometry(0.48, 0.95, 8);
+                tailGeo.rotateZ(Math.PI / 2.8);
+                const tailMesh = new THREE.Mesh(tailGeo, wingMat);
+                tailMesh.position.set(-1.45, 0.85, 0);
+                rig.add(tailMesh);
+
+                // Left & Right Animated Wings
+                const wingGeo = new THREE.SphereGeometry(0.65, 12, 10);
+                wingGeo.scale(1.25, 0.25, 0.72);
+                const leftWing = new THREE.Mesh(wingGeo, wingMat);
+                leftWing.position.set(-0.1, 0.75, -0.95);
+                rig.add(leftWing);
+
+                const rightWing = new THREE.Mesh(wingGeo, wingMat);
+                rightWing.position.set(-0.1, 0.75, 0.95);
+                rig.add(rightWing);
+
+                // Head Group (for nodding & expressions)
+                const headGroup = new THREE.Group();
+                headGroup.position.set(0.95, 1.48, 0);
+                rig.add(headGroup);
+
+                const headGeo = new THREE.SphereGeometry(0.76, 16, 14);
+                const headMesh = new THREE.Mesh(headGeo, bodyMat);
+                headMesh.castShadow = true;
+                headGroup.add(headMesh);
+
+                // Upper & Lower Beak (opens when quacking)
+                const upperBeakGeo = new THREE.BoxGeometry(0.78, 0.22, 0.58);
+                const upperBeak = new THREE.Mesh(upperBeakGeo, this.beakMat);
+                upperBeak.position.set(0.78, 0.04, 0);
+                headGroup.add(upperBeak);
+
+                const lowerBeakGeo = new THREE.BoxGeometry(0.68, 0.14, 0.52);
+                const lowerBeak = new THREE.Mesh(lowerBeakGeo, this.beakMat);
+                lowerBeak.position.set(0.72, -0.14, 0);
+                headGroup.add(lowerBeak);
+
+                // Expressive Cartoon Eyes
+                const eyeGeo = new THREE.SphereGeometry(0.17, 10, 10);
+                const pupilGeo = new THREE.SphereGeometry(0.09, 8, 8);
+
+                const leftEye = new THREE.Mesh(eyeGeo, this.eyeWhiteMat);
+                leftEye.position.set(0.45, 0.24, -0.56);
+                const leftPupil = new THREE.Mesh(pupilGeo, this.eyePupilMat);
+                leftPupil.position.set(0.56, 0.25, -0.62);
+                headGroup.add(leftEye, leftPupil);
+
+                const rightEye = new THREE.Mesh(eyeGeo, this.eyeWhiteMat);
+                rightEye.position.set(0.45, 0.24, 0.56);
+                const rightPupil = new THREE.Mesh(pupilGeo, this.eyePupilMat);
+                rightPupil.position.set(0.56, 0.25, 0.62);
+                headGroup.add(rightEye, rightPupil);
+
+                // Accessories / Hats
+                if (racer.hatType === 'CROWN') {
+                    const crownGeo = new THREE.CylinderGeometry(0.42, 0.32, 0.38, 6);
+                    const crown = new THREE.Mesh(crownGeo, this.crownMat);
+                    crown.position.set(0, 0.85, 0);
+                    headGroup.add(crown);
+                } else if (racer.hatType === 'TOP_HAT') {
+                    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.58, 0.08, 12), this.darkHatMat);
+                    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.55, 12), this.darkHatMat);
+                    brim.position.set(0, 0.72, 0);
+                    top.position.set(0, 1.0, 0);
+                    headGroup.add(brim, top);
+                } else if (racer.hatType === 'HEADBAND') {
+                    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.77, 0.77, 0.16, 16), this.cyanGlowMat);
+                    band.position.set(0, 0.35, 0);
+                    headGroup.add(band);
+                }
+
+                // Water Ripple Ring underneath Duck
+                const rippleGeo = new THREE.RingGeometry(1.15, 1.48, 20);
+                rippleGeo.rotateX(-Math.PI / 2);
+                const rippleMat = new THREE.MeshBasicMaterial({
+                    color: 0x7DD3FC,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.55
+                });
+                const rippleMesh = new THREE.Mesh(rippleGeo, rippleMat);
+                rippleMesh.position.y = 0.05;
+                root.add(rippleMesh);
+
+                return {
+                    root,
+                    rig,
+                    headGroup,
+                    leftWing,
+                    rightWing,
+                    lowerBeak,
+                    rippleMesh
+                };
+            }
+
+            rebuildDucks(racers, isCompactMode = false) {
+                // Cleanup previous 3D duck meshes & labels
+                this.duckMeshes.forEach(obj => {
+                    this.scene.remove(obj.root);
+                });
+                this.duckMeshes.clear();
+                this.labelsContainer.innerHTML = '';
+                this.duckLabels.clear();
+
+                const count = racers.length;
+                const scale = (isCompactMode || count > 45) ? 0.68 : (count > 22 ? 0.85 : 1.05);
+
+                racers.forEach(racer => {
+                    const duckObj = this._createDuck3DMesh(racer, scale);
+                    const zPos = racer.lateralOffset * (this.RIVER_WIDTH * 0.44);
+                    duckObj.root.position.set(0, 0, zPos);
+                    this.scene.add(duckObj.root);
+                    this.duckMeshes.set(racer.id, duckObj);
+
+                    // Create floating HTML label
+                    const labelEl = document.createElement('div');
+                    labelEl.className = 'duck-label';
+                    labelEl.textContent = racer.name;
+                    this.labelsContainer.appendChild(labelEl);
+                    this.duckLabels.set(racer.id, labelEl);
+                });
+            }
+
+            updateScene(racers, elapsedTime, dt, settings) {
+                // Animate 3D Water Waves
+                if (this.waterMesh) {
+                    const posAttr = this.waterMesh.geometry.attributes.position;
+                    for (let i = 0; i < posAttr.count; i++) {
+                        const vx = posAttr.getX(i);
+                        const vz = posAttr.getZ(i);
+                        const waveY = Math.sin(vx * 0.14 + elapsedTime * 3.2) * 0.18 + Math.cos(vz * 0.22 + elapsedTime * 2.4) * 0.14;
+                        posAttr.setY(i, waveY);
+                    }
+                    posAttr.needsUpdate = true;
+                }
+
+                // Update Duck 3D Transforms & Animations
+                let leaderX = 0;
+                let leaderZ = 0;
+                const halfRiver = this.RIVER_WIDTH * 0.44;
+
+                racers.forEach(racer => {
+                    const duckObj = this.duckMeshes.get(racer.id);
+                    if (!duckObj) return;
+
+                    const worldX = racer.progress * this.TRACK_LENGTH;
+                    const worldZ = racer.lateralOffset * halfRiver + Math.sin(racer.swayPhase) * 0.35;
+                    const prevZ = duckObj.root.position.z;
+
+                    duckObj.root.position.x = worldX;
+                    duckObj.root.position.z = worldZ;
+
+                    if (racer.currentRank === 1) {
+                        leaderX = worldX;
+                        leaderZ = worldZ;
+                    }
+
+                    // Bobbing up and down in water
+                    duckObj.rig.position.y = Math.sin(racer.bobPhase) * 0.16 + (racer.isSprinting ? 0.14 : 0);
+
+                    // Pitch forward when sprinting, celebratory bounce when finished
+                    if (racer.finished) {
+                        duckObj.rig.position.y = Math.abs(Math.sin(elapsedTime * 7 + racer.bobPhase)) * 0.75;
+                        duckObj.rig.rotation.y += dt * 4.5;
+                    } else {
+                        duckObj.rig.rotation.y = 0;
+                        duckObj.rig.rotation.z = racer.isSprinting ? -0.16 : Math.sin(racer.bobPhase) * 0.06;
+                        // Bank/tilt body when changing lanes laterally
+                        const dz = (worldZ - prevZ) / Math.max(0.001, dt);
+                        duckObj.rig.rotation.x = THREE.MathUtils.clamp(-dz * 0.08, -0.32, 0.32);
+                    }
+
+                    // Wing Flapping
+                    const flapAngle = Math.sin(racer.wingPhase) * (racer.isSprinting ? 0.65 : 0.28);
+                    duckObj.leftWing.rotation.x = flapAngle;
+                    duckObj.rightWing.rotation.x = -flapAngle;
+
+                    // Head Nodding & Beak Quacking
+                    duckObj.headGroup.rotation.z = Math.sin(racer.bobPhase * 1.2) * 0.09;
+                    duckObj.lowerBeak.rotation.z = racer.quackTimer > 0 ? -0.38 : 0;
+
+                    // Water Ripple Pulse
+                    const rippleScale = 1.0 + Math.sin(racer.bobPhase * 1.5) * 0.18;
+                    duckObj.rippleMesh.scale.set(rippleScale, rippleScale, 1);
+
+                    // Spawn water splashes when sprinting
+                    if (racer.isSprinting && !racer.finished && Math.random() < 0.35) {
+                        this.spawnSplash(worldX, worldZ, 1.3);
+                    }
+                });
+
+                // Update Splash Particles
+                for (let i = 0; i < this.splashParticles.length; i++) {
+                    const p = this.splashParticles[i];
+                    if (p.active) {
+                        p.life -= dt;
+                        if (p.life <= 0) {
+                            p.active = false;
+                            p.mesh.visible = false;
+                        } else {
+                            p.mesh.position.x += p.vx * dt;
+                            p.mesh.position.y += p.vy * dt;
+                            p.mesh.position.z += p.vz * dt;
+                            p.vy -= 9.8 * dt;
+                        }
+                    }
+                }
+
+                // Update Smooth 3D Camera Tracking
+                const mode = this.cameraModes[this.cameraModeIndex];
+                const isFinalStretch = leaderX > this.TRACK_LENGTH * 0.78;
+                let desiredCamPos = new THREE.Vector3();
+                let desiredLookAt = new THREE.Vector3(leaderX + 6, 1.2, leaderZ * 0.35);
+
+                if (mode === 'DRONE_TOP') {
+                    desiredCamPos.set(leaderX - 10, 48, 0);
+                    desiredLookAt.set(leaderX + 8, 0, 0);
+                } else if (mode === 'CLOSE_ACTION' || isFinalStretch) {
+                    desiredCamPos.set(leaderX - 18, 9.5, leaderZ + 18);
+                    desiredLookAt.set(leaderX + 5, 1.5, leaderZ * 0.6);
+                } else if (mode === 'FINISH_CAM') {
+                    desiredCamPos.set(this.TRACK_LENGTH + 22, 14, 24);
+                    desiredLookAt.set(this.TRACK_LENGTH - 12, 1.5, 0);
+                } else {
+                    // TV Broadcast side-follow
+                    desiredCamPos.set(leaderX - 24, 18, 38);
+                }
+
+                // Apply user touch/mouse orbit offsets
+                desiredCamPos.x += Math.sin(this.userOrbit.yawOffset) * 14;
+                desiredCamPos.y = Math.max(4, desiredCamPos.y + this.userOrbit.pitchOffset * 12);
+
+                this.camera.position.lerp(desiredCamPos, Math.min(1, dt * 4.5));
+                this.cameraLookTarget.lerp(desiredLookAt, Math.min(1, dt * 6.0));
+                this.camera.lookAt(this.cameraLookTarget);
+
+                // Render 3D Scene
+                this.renderer.render(this.scene, this.camera);
+
+                // Project 3D Duck Positions to 2D Floating HTML Labels
+                this._updateProjectedLabels(racers, settings);
+            }
+
+            _updateProjectedLabels(racers, settings) {
+                const width = this.container.clientWidth;
+                const height = this.container.clientHeight;
+                const widthHalf = width / 2;
+                const heightHalf = height / 2;
+                const tempVec = new THREE.Vector3();
+
+                const labelMode = settings.labelMode || 'ADAPTIVE';
+                const total = racers.length;
+
+                racers.forEach(racer => {
+                    const labelEl = this.duckLabels.get(racer.id);
+                    const duckObj = this.duckMeshes.get(racer.id);
+                    if (!labelEl || !duckObj) return;
+
+                    // Adaptive visibility to prevent label clutter on 100-500 ducks
+                    let shouldShow = true;
+                    if (labelMode === 'TOP10' && racer.currentRank > 10) {
+                        shouldShow = false;
+                    } else if (labelMode === 'ADAPTIVE' && total > 40 && racer.currentRank > 15) {
+                        shouldShow = false;
+                    }
+
+                    if (!shouldShow) {
+                        labelEl.style.display = 'none';
+                        return;
+                    }
+
+                    tempVec.copy(duckObj.root.position);
+                    tempVec.y += 3.1;
+                    tempVec.project(this.camera);
+
+                    // Hide if behind camera frustum
+                    if (tempVec.z > 1) {
+                        labelEl.style.display = 'none';
+                        return;
+                    }
+
+                    const screenX = (tempVec.x * widthHalf) + widthHalf;
+                    const screenY = -(tempVec.y * heightHalf) + heightHalf;
+
+                    labelEl.style.display = 'block';
+                    labelEl.style.transform = `translate(-50%, -100%) translate3d(${screenX.toFixed(1)}px, ${screenY.toFixed(1)}px, 0)`;
+                    labelEl.style.zIndex = String(1000 - racer.currentRank);
+
+                    const rankPrefix = racer.currentRank <= 3 ? `#${racer.currentRank} ` : '';
+                    labelEl.textContent = `${rankPrefix}${racer.name}`;
+
+                    labelEl.classList.toggle('is-leader', racer.currentRank === 1);
+                    labelEl.classList.toggle('is-sprinting', racer.isSprinting && racer.currentRank !== 1);
+                });
+            }
+
+            cycleCameraMode() {
+                this.cameraModeIndex = (this.cameraModeIndex + 1) % this.cameraModes.length;
+                const names = {
+                    'BROADCAST': 'TV Broadcast',
+                    'DRONE_TOP': 'Drone Atas',
+                    'CLOSE_ACTION': 'Kamera Dekat',
+                    'FINISH_CAM': 'Garis Finis'
+                };
+                return names[this.cameraModes[this.cameraModeIndex]];
+            }
+
+            _bindCameraInput() {
+                const startDrag = (x, y) => {
+                    this.userOrbit.isDragging = true;
+                    this.userOrbit.prevX = x;
+                    this.userOrbit.prevY = y;
+                };
+                const moveDrag = (x, y) => {
+                    if (!this.userOrbit.isDragging) return;
+                    const dx = (x - this.userOrbit.prevX) * 0.006;
+                    const dy = (y - this.userOrbit.prevY) * 0.006;
+                    this.userOrbit.yawOffset = THREE.MathUtils.clamp(this.userOrbit.yawOffset + dx, -1.2, 1.2);
+                    this.userOrbit.pitchOffset = THREE.MathUtils.clamp(this.userOrbit.pitchOffset + dy, -0.4, 1.2);
+                    this.userOrbit.prevX = x;
+                    this.userOrbit.prevY = y;
+                };
+                const endDrag = () => { this.userOrbit.isDragging = false; };
+
+                this.container.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
+                window.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
+                window.addEventListener('mouseup', endDrag);
+
+                this.container.addEventListener('touchstart', e => {
+                    if (e.touches.length === 1) startDrag(e.touches[0].clientX, e.touches[0].clientY);
+                }, { passive: true });
+                window.addEventListener('touchmove', e => {
+                    if (e.touches.length === 1) moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+                }, { passive: true });
+                window.addEventListener('touchend', endDrag);
+            }
+
+            onResize() {
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+                this.camera.aspect = w / h;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(w, h);
+            }
+        }
+
+        class ConfettiFX {
+            constructor(canvasEl) {
+                this.canvas = canvasEl;
+                this.ctx = canvasEl.getContext('2d');
+                this.particles = [];
+                this.isRunning = false;
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            burst() {
+                this.particles = [];
+                const colors = ['#FFD700', '#00F0FF', '#FF5E36', '#10B981', '#A855F7', '#FFFFFF'];
+                for (let i = 0; i < 130; i++) {
+                    this.particles.push({
+                        x: this.canvas.width * (0.2 + Math.random() * 0.6),
+                        y: this.canvas.height * 0.35,
+                        vx: (Math.random() - 0.5) * 16,
+                        vy: -(Math.random() * 14 + 5),
+                        size: 6 + Math.random() * 7,
+                        color: colors[i % colors.length],
+                        rot: Math.random() * Math.PI * 2,
+                        vRot: (Math.random() - 0.5) * 0.25
+                    });
+                }
+                if (!this.isRunning) {
+                    this.isRunning = true;
+                    this._loop();
+                }
+            }
+
+            stop() {
+                this.isRunning = false;
+                this.particles = [];
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+
+            _loop() {
+                if (!this.isRunning) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                let alive = 0;
+                this.particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.38; // gravity
+                    p.rot += p.vRot;
+                    if (p.y < this.canvas.height + 30) {
+                        alive++;
+                        this.ctx.save();
+                        this.ctx.translate(p.x, p.y);
+                        this.ctx.rotate(p.rot);
+                        this.ctx.fillStyle = p.color;
+                        this.ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                        this.ctx.restore();
+                    }
+                });
+                if (alive > 0) {
+                    requestAnimationFrame(() => this._loop());
+                } else {
+                    this.isRunning = false;
+                }
+            }
+        }
+
+        class DuckRaceController {
+            constructor() {
+                this.STATES = {
+                    READY: 'READY',
+                    COUNTDOWN: 'COUNTDOWN',
+                    RACING: 'RACING',
+                    PAUSED: 'PAUSED',
+                    FINISHING: 'FINISHING',
+                    RESULTS: 'RESULTS'
+                };
+                this.state = this.STATES.READY;
+
+                this.storage = new StorageManager();
+                this.audio = new AudioManager();
+                this.participantMgr = new ParticipantManager(this.storage);
+                this.simulation = new RaceSimulation();
+                this.renderer3D = new DuckRenderer3D(
+                    document.getElementById('canvas-container'),
+                    document.getElementById('labels-container')
+                );
+                this.confetti = new ConfettiFX(document.getElementById('fx-canvas'));
+
+                // Default Race Settings
+                this.settings = Object.assign({
+                    targetDuration: 20,
+                    winnerCount: 3,
+                    stopOnWinners: true,
+                    arenaMode: 'FULL', // FULL, COMPACT, WAVE, TOURNAMENT
+                    waveSize: 25,
+                    waveAdvanceCount: 3,
+                    chaosLevel: 2,
+                    sprintIntensity: 2,
+                    comebackBoost: 2,
+                    visualTheme: 'DAYLIGHT',
+                    labelMode: 'ADAPTIVE'
+                }, this.storage.loadSettings() || {});
+
+                // Wave / Tournament state
+                this.wavesQueue = [];
+                this.currentWaveIndex = 0;
+                this.qualifiedFromWaves = [];
+                this.isFinalWave = false;
+
+                this.countdownTimer = null;
+                this.lastFrameTime = performance.now();
+
+                this._initUI();
+                this.prepareRaceRoster();
+                this._startMasterLoop();
+            }
+
+            prepareRaceRoster() {
+                const allParticipants = this.participantMgr.getAll();
+                if (allParticipants.length < 2) {
+                    this.participantMgr.generateSampleCount(2);
+                }
+                const roster = this.participantMgr.getAll();
+
+                // Check if Multi-Wave or Tournament Mode is active and needed
+                if ((this.settings.arenaMode === 'WAVE' || this.settings.arenaMode === 'TOURNAMENT') && roster.length > this.settings.waveSize) {
+                    this.wavesQueue = [];
+                    for (let i = 0; i < roster.length; i += this.settings.waveSize) {
+                        this.wavesQueue.push(roster.slice(i, i + this.settings.waveSize));
+                    }
+                    this.currentWaveIndex = 0;
+                    this.qualifiedFromWaves = [];
+                    this.isFinalWave = false;
+                    this._loadActiveSubRoster(this.wavesQueue[0]);
+                    this._updateWaveBadge();
+                } else {
+                    this.wavesQueue = [];
+                    this.currentWaveIndex = 0;
+                    this.qualifiedFromWaves = [];
+                    this.isFinalWave = true;
+                    this._loadActiveSubRoster(roster);
+                    this._updateWaveBadge();
+                }
+            }
+
+            _loadActiveSubRoster(subset) {
+                this.simulation.initRacers(subset, this.settings);
+                const isCompact = this.settings.arenaMode === 'COMPACT' || subset.length > 40;
+                this.renderer3D.rebuildDucks(this.simulation.racers, isCompact);
+                this._updateHUDTelemetry();
+                this._renderLeaderboard(this.simulation.racers);
+            }
+
+            _updateWaveBadge() {
+                const badge = document.getElementById('wave-badge');
+                const text = document.getElementById('wave-badge-text');
+                if (this.wavesQueue.length > 1) {
+                    badge.classList.remove('hidden');
+                    badge.classList.add('flex');
+                    if (this.isFinalWave) {
+                        text.textContent = 'GRAND FINAL';
+                    } else {
+                        text.textContent = `Babak ${this.currentWaveIndex + 1}/${this.wavesQueue.length}`;
+                    }
+                } else {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('flex');
+                }
+            }
+
+            startCountdown() {
+                if (this.state !== this.STATES.READY && this.state !== this.STATES.RESULTS) return;
+                this.confetti.stop();
+                document.getElementById('modal-results').classList.add('hidden');
+                document.getElementById('modal-results').classList.remove('flex');
+
+                this.state = this.STATES.COUNTDOWN;
+                this._syncControlButtons();
+
+                const badge = document.getElementById('countdown-badge');
+                const numEl = document.getElementById('countdown-number');
+                const subEl = document.getElementById('countdown-sub');
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+
+                let count = 3;
+                numEl.textContent = count;
+                subEl.textContent = 'Bebek Bersiap di Garis Start!';
+                this.audio.playCountdownBeep(false);
+
+                clearInterval(this.countdownTimer);
+                this.countdownTimer = setInterval(() => {
+                    count--;
+                    if (count > 0) {
+                        numEl.textContent = count;
+                        numEl.classList.remove('countdown-anim');
+                        void numEl.offsetWidth;
+                        numEl.classList.add('countdown-anim');
+                        this.audio.playCountdownBeep(false);
+                    } else if (count === 0) {
+                        numEl.textContent = 'GO!';
+                        subEl.textContent = 'BALAPAN DIMULAI!';
+                        this.audio.playCountdownBeep(true);
+                        this.audio.playWhistle();
+                        this.beginRacingState();
+                    } else {
+                        clearInterval(this.countdownTimer);
+                        badge.classList.add('hidden');
+                        badge.classList.remove('flex');
+                    }
+                }, 850);
+            }
+
+            beginRacingState() {
+                this.state = this.STATES.RACING;
+                this._syncControlButtons();
+                this.audio.startBackgroundMusic(false);
+                this.audio.playQuackChorus(4, 1.05);
+                this._setCommentary('🌊 KWEK-KWEK! Semua bebek melesat serentak dari garis start!');
+            }
+
+            togglePause() {
+                if (this.state === this.STATES.RACING) {
+                    this.state = this.STATES.PAUSED;
+                    this.audio.stopBackgroundMusic();
+                    this._setCommentary('⏸️ Balapan dijeda sementara. Posisi bebek terkunci.');
+                } else if (this.state === this.STATES.PAUSED) {
+                    this.state = this.STATES.RACING;
+                    this.audio.startBackgroundMusic(this.simulation.finalStretchTriggered);
+                    this._setCommentary('▶️ Balapan dilanjutkan kembali!');
+                }
+                this._syncControlButtons();
+            }
+
+            resetRace() {
+                clearInterval(this.countdownTimer);
+                this.audio.stopBackgroundMusic();
+                this.confetti.stop();
+                document.getElementById('countdown-badge').classList.add('hidden');
+                document.getElementById('countdown-badge').classList.remove('flex');
+
+                this.state = this.STATES.READY;
+                this._loadActiveSubRoster(this.simulation.racers.map(r => ({
+                    id: r.id,
+                    name: r.name,
+                    paletteIndex: r.paletteIndex,
+                    hatType: r.hatType
+                })));
+                this._setCommentary('Siap di garis start! Tekan MULAI BALAPAN untuk memicu aksi.');
+                this._syncControlButtons();
+            }
+
+            completeRace() {
+                this.state = this.STATES.RESULTS;
+                this.audio.stopBackgroundMusic();
+                this.audio.playVictoryFanfare();
+                this.confetti.burst();
+                this._syncControlButtons();
+
+                const winners = this.simulation.finishedOrder.slice(0, this.settings.winnerCount);
+                // If race ended before all winner slots crossed (e.g. only 2 racers), fill from sorted
+                if (winners.length < Math.min(this.settings.winnerCount, this.simulation.racers.length)) {
+                    const remaining = this.simulation.racers
+                        .filter(r => !r.finished)
+                        .sort((a, b) => b.progress - a.progress);
+                    winners.push(...remaining.slice(0, this.settings.winnerCount - winners.length));
+                }
+
+                // Handle Multi-Wave qualification
+                if (this.wavesQueue.length > 1 && !this.isFinalWave) {
+                    const advanceCount = Math.min(this.settings.waveAdvanceCount, winners.length);
+                    this.qualifiedFromWaves.push(...winners.slice(0, advanceCount));
+                }
+
+                // Save to History
+                const history = this.storage.loadHistory();
+                history.unshift({
+                    id: 'hist_' + Date.now(),
+                    timestamp: new Date().toLocaleString('id-ID'),
+                    roundLabel: this.wavesQueue.length > 1
+                        ? (this.isFinalWave ? 'Grand Final Turnamen' : `Gelombang ${this.currentWaveIndex + 1}`)
+                        : 'Arena Utama',
+                    totalParticipants: this.simulation.racers.length,
+                    leadChanges: this.simulation.totalLeadChanges,
+                    winners: winners.map((w, i) => ({
+                        rank: i + 1,
+                        name: w.name,
+                        time: (w.finishTime || this.simulation.elapsedTime).toFixed(2) + 's'
+                    }))
+                });
+                this.storage.saveHistory(history);
+
+                this._showResultsModal(winners);
+            }
+
+            advanceToNextWave() {
+                if (this.wavesQueue.length <= 1) return;
+                document.getElementById('modal-results').classList.add('hidden');
+                document.getElementById('modal-results').classList.remove('flex');
+                this.confetti.stop();
+
+                if (this.currentWaveIndex + 1 < this.wavesQueue.length) {
+                    this.currentWaveIndex++;
+                    this._loadActiveSubRoster(this.wavesQueue[this.currentWaveIndex]);
+                } else {
+                    // Start Grand Final with all qualified winners!
+                    this.isFinalWave = true;
+                    this._loadActiveSubRoster(this.qualifiedFromWaves);
+                }
+                this._updateWaveBadge();
+                this.state = this.STATES.READY;
+                this._syncControlButtons();
+                this.startCountdown();
+            }
+
+            _startMasterLoop() {
+                const tick = (now) => {
+                    const dt = (now - this.lastFrameTime) / 1000;
+                    this.lastFrameTime = now;
+
+                    if (this.state === this.STATES.RACING) {
+                        const stepResult = this.simulation.step(
+                            dt,
+                            this.settings,
+                            this.audio,
+                            (msg) => this._setCommentary(msg)
+                        );
+
+                        this._updateHUDTelemetry(stepResult.leaderProgress);
+                        this._renderLeaderboard(stepResult.sortedRacers);
+
+                        const targetSlots = Math.min(this.settings.winnerCount, this.simulation.racers.length);
+                        const shouldEnd = this.settings.stopOnWinners
+                            ? (stepResult.finishedCount >= targetSlots)
+                            : (stepResult.finishedCount >= this.simulation.racers.length);
+
+                        if (shouldEnd) {
+                            this.completeRace();
+                        }
+                    }
+
+                    // Always render 3D water & ducks smoothly
+                    this.renderer3D.updateScene(
+                        this.simulation.racers,
+                        this.simulation.elapsedTime,
+                        Math.min(dt, 0.05),
+                        this.settings
+                    );
+
+                    requestAnimationFrame(tick);
+                };
+                requestAnimationFrame(tick);
+            }
+
+            _updateHUDTelemetry(leaderProgress = 0) {
+                document.getElementById('stat-active-count').textContent = this.simulation.racers.length;
+                document.getElementById('stat-finished-count').textContent = this.simulation.finishedOrder.length;
+                document.getElementById('stat-winner-slots').textContent = Math.min(this.settings.winnerCount, this.simulation.racers.length);
+                document.getElementById('stat-timer').textContent = this.simulation.elapsedTime.toFixed(1) + 's';
+
+                const pct = Math.round(leaderProgress * 100);
+                document.getElementById('race-progress-pct').textContent = `${pct}%`;
+                document.getElementById('leader-progress-bar').style.width = `${pct}%`;
+            }
+
+            _renderLeaderboard(sortedRacers) {
+                const listEl = document.getElementById('leaderboard-list');
+                const top5 = sortedRacers.slice(0, 5);
+                listEl.innerHTML = top5.map((r, idx) => {
+                    const badgeColor = idx === 0 ? 'bg-duck text-navy-950' : (idx === 1 ? 'bg-slate-300 text-navy-950' : (idx === 2 ? 'bg-amber-600 text-white' : 'bg-navy-800 text-slate-300'));
+                    const statusIcon = r.finished ? '🏁' : (r.isSprinting ? '⚡' : '');
+                    return `
+                        <div class="flex items-center justify-between gap-2 px-2 py-1 rounded-lg bg-navy-950/60 border border-white/5">
+                            <div class="flex items-center gap-2 truncate">
+                                <span class="w-5 h-5 rounded-md font-display font-black text-[11px] flex items-center justify-center shrink-0 ${badgeColor}">${idx + 1}</span>
+                                <span class="font-semibold text-white truncate">${this._escapeHTML(r.name)}</span>
+                            </div>
+                            <span class="text-[11px] font-display font-bold text-cyan shrink-0">${statusIcon} ${Math.min(100, Math.round(r.progress * 100))}%</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            _setCommentary(text) {
+                const el = document.getElementById('commentary-text');
+                if (el) el.textContent = text;
+            }
+
+            _syncControlButtons() {
+                const btnStart = document.getElementById('btn-start-race');
+                const btnPause = document.getElementById('btn-pause-race');
+                const iconPause = document.getElementById('icon-pause');
+                const textPause = document.getElementById('text-pause');
+
+                if (this.state === this.STATES.RACING || this.state === this.STATES.PAUSED || this.state === this.STATES.COUNTDOWN) {
+                    btnStart.disabled = true;
+                    btnStart.classList.add('opacity-50', 'pointer-events-none');
+                } else {
+                    btnStart.disabled = false;
+                    btnStart.classList.remove('opacity-50', 'pointer-events-none');
+                }
+
+                btnPause.disabled = !(this.state === this.STATES.RACING || this.state === this.STATES.PAUSED);
+                if (this.state === this.STATES.PAUSED) {
+                    iconPause.className = 'fa-solid fa-play';
+                    textPause.textContent = 'LANJUTKAN';
+                } else {
+                    iconPause.className = 'fa-solid fa-pause';
+                    textPause.textContent = 'PAUSE';
+                }
+            }
+
+            _showResultsModal(winners) {
+                const modal = document.getElementById('modal-results');
+                const podiumEl = document.getElementById('podium-boxes');
+                const tableEl = document.getElementById('results-table-body');
+                const btnNextWave = document.getElementById('btn-next-wave');
+
+                document.getElementById('results-overtake-stat').textContent =
+                    `${this.simulation.totalLeadChanges}x Pergantian Pimpinan • ${this.simulation.totalOvertakes}x Manuver Salipan`;
+
+                // Build Top 3 Podium Cards
+                const podiumOrder = [winners[1], winners[0], winners[2]].filter(Boolean);
+                podiumEl.innerHTML = podiumOrder.map(w => {
+                    const rank = winners.indexOf(w) + 1;
+                    const isFirst = rank === 1;
+                    const heightClass = isFirst ? 'sm:pb-8 border-duck bg-duck/15' : (rank === 2 ? 'sm:pb-4 border-cyan/50 bg-navy-800/90' : 'border-coral/50 bg-navy-800/90');
+                    const medal = isFirst ? '🥇 JUARA 1' : (rank === 2 ? '🥈 JUARA 2' : '🥉 JUARA 3');
+                    const timeStr = (w.finishTime || this.simulation.elapsedTime).toFixed(2) + 's';
+                    return `
+                        <div class="glass-card rounded-2xl p-4 border-2 ${heightClass} flex flex-col items-center text-center shadow-xl">
+                            <span class="font-display font-black text-xs px-3 py-1 rounded-full bg-navy-950 text-duck border border-white/15 mb-2">${medal}</span>
+                            <div class="text-3xl mb-1">${isFirst ? '👑🦆' : '🦆'}</div>
+                            <h4 class="font-display font-black text-base md:text-lg text-white truncate max-w-full">${this._escapeHTML(w.name)}</h4>
+                            <span class="text-xs font-mono text-cyan font-bold mt-1"><i class="fa-solid fa-stopwatch"></i> ${timeStr}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                // Full Recorded Table
+                tableEl.innerHTML = winners.map((w, idx) => {
+                    const timeStr = (w.finishTime || this.simulation.elapsedTime).toFixed(2) + ' detik';
+                    return `
+                        <div class="flex items-center justify-between px-3.5 py-2 rounded-xl bg-navy-950/80 border border-white/10 text-xs md:text-sm">
+                            <div class="flex items-center gap-3">
+                                <span class="w-6 h-6 rounded-lg bg-duck/20 text-duck font-display font-black flex items-center justify-center">#${idx + 1}</span>
+                                <span class="font-bold text-white">${this._escapeHTML(w.name)}</span>
+                            </div>
+                            <span class="font-display font-bold text-emerald-400">${timeStr}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                // Show or hide Next Wave button
+                if (this.wavesQueue.length > 1 && !this.isFinalWave) {
+                    btnNextWave.classList.remove('hidden');
+                    btnNextWave.classList.add('flex');
+                } else {
+                    btnNextWave.classList.add('hidden');
+                    btnNextWave.classList.remove('flex');
+                }
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            _initUI() {
+                // Main Race Controls
+                document.getElementById('btn-start-race').addEventListener('click', () => this.startCountdown());
+                document.getElementById('btn-pause-race').addEventListener('click', () => this.togglePause());
+                document.getElementById('btn-reset-race').addEventListener('click', () => {
+                    if (this.state === this.STATES.RACING || this.state === this.STATES.PAUSED) {
+                        ModalHelper.confirm({
+                            title: 'Reset Balapan?',
+                            message: 'Balapan sedang berlangsung. Apakah Anda yakin ingin menghentikan dan mengembalikan semua bebek ke garis start?',
+                            onConfirm: () => this.resetRace()
+                        });
+                    } else {
+                        this.resetRace();
+                    }
+                });
+
+                document.getElementById('btn-shuffle-ducks').addEventListener('click', () => {
+                    if (this.state === this.STATES.RACING) return;
+                    this.participantMgr.shuffle();
+                    this.prepareRaceRoster();
+                    ModalHelper.showToast('Urutan jalur bebek berhasil diacak!');
+                });
+
+                // Camera Mode Button
+                document.getElementById('btn-camera-mode').addEventListener('click', () => {
+                    const label = this.renderer3D.cycleCameraMode();
+                    document.getElementById('camera-mode-label').textContent = label;
+                    ModalHelper.showToast(`Kamera 3D: ${label}`);
+                });
+
+                // Manual Fun Quack Button on Header for Teacher / Students
+                document.getElementById('btn-manual-quack').addEventListener('click', () => {
+                    this.audio.playQuack(0.95 + Math.random() * 0.3, true);
+                    this.simulation.racers.forEach(r => {
+                        if (Math.random() < 0.45) r.quackTimer = 0.38;
+                    });
+                });
+
+                // Quick Mute Toggle
+                document.getElementById('btn-quick-mute').addEventListener('click', () => {
+                    this.audio.isMuted = !this.audio.isMuted;
+                    const icon = document.getElementById('icon-quick-mute');
+                    icon.className = this.audio.isMuted ? 'fa-solid fa-volume-xmark text-coral' : 'fa-solid fa-volume-high text-duck';
+                    ModalHelper.showToast(this.audio.isMuted ? 'Mode Senyap Aktif' : 'Audio Diaktifkan');
+                });
+
+                // Fullscreen API with Graceful Fallback
+                document.getElementById('btn-fullscreen').addEventListener('click', () => {
+                    const docEl = document.documentElement;
+                    if (!document.fullscreenElement) {
+                        if (docEl.requestFullscreen) {
+                            docEl.requestFullscreen().catch(() => {
+                                ModalHelper.showToast('Layar penuh dibatasi oleh container browser.');
+                            });
+                        }
+                    } else if (document.exitFullscreen) {
+                        document.exitFullscreen().catch(() => {});
+                    }
+                });
+
+                // Teacher Settings Modal Open/Close
+                const settingsModal = document.getElementById('modal-settings');
+                const openSettings = () => {
+                    this._renderParticipantsList();
+                    this._renderPresetsList();
+                    this._syncSettingsInputs();
+                    settingsModal.classList.remove('hidden');
+                    settingsModal.classList.add('flex');
+                };
+                const closeSettings = () => {
+                    settingsModal.classList.add('hidden');
+                    settingsModal.classList.remove('flex');
+                    if (this.state === this.STATES.READY || this.state === this.STATES.RESULTS) {
+                        this.prepareRaceRoster();
+                    }
+                };
+                document.getElementById('btn-open-settings').addEventListener('click', openSettings);
+                document.getElementById('btn-close-settings').addEventListener('click', closeSettings);
+                document.getElementById('btn-apply-settings').addEventListener('click', () => {
+                    closeSettings();
+                    ModalHelper.showToast('Pengaturan arena & daftar peserta diperbarui!');
+                });
+
+                // Settings Tabs Switching
+                document.querySelectorAll('.settings-tab').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.settings-tab').forEach(b => {
+                            b.classList.remove('border-duck', 'text-duck', 'bg-white/5');
+                            b.classList.add('border-transparent', 'text-slate-400');
+                        });
+                        btn.classList.add('border-duck', 'text-duck', 'bg-white/5');
+                        btn.classList.remove('border-transparent', 'text-slate-400');
+
+                        const targetId = btn.getAttribute('data-tab');
+                        document.querySelectorAll('.tab-pane').forEach(pane => {
+                            pane.classList.toggle('hidden', pane.id !== targetId);
+                        });
+                    });
+                });
+
+                // Participant Management Actions
+                const singleInput = document.getElementById('input-single-name');
+                const addSingleAction = () => {
+                    if (this.participantMgr.addOne(singleInput.value)) {
+                        singleInput.value = '';
+                        this._renderParticipantsList();
+                        ModalHelper.showToast('Peserta ditambahkan!');
+                    }
+                };
+                document.getElementById('btn-add-single').addEventListener('click', addSingleAction);
+                singleInput.addEventListener('keydown', e => { if (e.key === 'Enter') addSingleAction(); });
+
+                document.getElementById('btn-append-bulk').addEventListener('click', () => {
+                    const raw = document.getElementById('input-bulk-names').value;
+                    const added = this.participantMgr.addBulk(raw, false);
+                    if (added > 0) {
+                        document.getElementById('input-bulk-names').value = '';
+                        this._renderParticipantsList();
+                        ModalHelper.showToast(`${added} nama berhasil ditambahkan!`);
+                    }
+                });
+
+                document.getElementById('btn-replace-bulk').addEventListener('click', () => {
+                    const raw = document.getElementById('input-bulk-names').value;
+                    if (!raw.trim()) return;
+                    ModalHelper.confirm({
+                        title: 'Ganti Seluruh Daftar?',
+                        message: 'Daftar peserta saat ini akan diganti dengan daftar nama baru yang Anda tempel.',
+                        onConfirm: () => {
+                            const count = this.participantMgr.addBulk(raw, true);
+                            document.getElementById('input-bulk-names').value = '';
+                            this._renderParticipantsList();
+                            ModalHelper.showToast(`Daftar diganti dengan ${count} peserta baru!`);
+                        }
+                    });
+                });
+
+                // CSV File Import (UTF-8)
+                document.getElementById('input-csv-file').addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        const content = ev.target.result;
+                        const count = this.participantMgr.addBulk(content, false);
+                        this._renderParticipantsList();
+                        ModalHelper.showToast(`${count} peserta diimpor dari CSV!`);
+                        e.target.value = '';
+                    };
+                    reader.readAsText(file, 'UTF-8');
+                });
+
+                // Sample Stress-Test Generators (12, 30, 100, 300, 500)
+                document.querySelectorAll('.btn-gen-sample').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const count = parseInt(btn.getAttribute('data-gen'), 10);
+                        this.participantMgr.generateSampleCount(count);
+                        if (count > 60 && this.settings.arenaMode === 'FULL') {
+                            this.settings.arenaMode = 'COMPACT';
+                            document.getElementById('select-arena-mode').value = 'COMPACT';
+                        }
+                        this._renderParticipantsList();
+                        ModalHelper.showToast(`Berhasil memuat simulasi ${count} peserta!`);
+                    });
+                });
+
+                document.getElementById('btn-deduplicate').addEventListener('click', () => {
+                    ModalHelper.confirm({
+                        title: 'Hapus Nama Duplikat?',
+                        message: 'Sistem akan memeriksa dan menghapus nama yang tertulis lebih dari satu kali.',
+                        onConfirm: () => {
+                            const removed = this.participantMgr.removeDuplicates();
+                            this._renderParticipantsList();
+                            ModalHelper.showToast(`${removed} nama duplikat dihapus.`);
+                        }
+                    });
+                });
+
+                document.getElementById('btn-shuffle-list').addEventListener('click', () => {
+                    this.participantMgr.shuffle();
+                    this._renderParticipantsList();
+                    ModalHelper.showToast('Urutan peserta diacak!');
+                });
+
+                document.getElementById('btn-clear-all').addEventListener('click', () => {
+                    ModalHelper.confirm({
+                        title: 'Kosongkan Daftar Peserta?',
+                        message: 'Seluruh nama dalam daftar saat ini akan dihapus.',
+                        onConfirm: () => {
+                            this.participantMgr.participants = [];
+                            this.participantMgr.save();
+                            this._renderParticipantsList();
+                            ModalHelper.showToast('Daftar peserta dikosongkan.');
+                        }
+                    });
+                });
+
+                document.getElementById('input-filter-participants').addEventListener('input', () => {
+                    this._renderParticipantsList();
+                });
+
+                // Race Parameter Sliders & Selects
+                const bindRange = (id, key, formatter) => {
+                    const el = document.getElementById(id);
+                    el.addEventListener('input', () => {
+                        const val = Number(el.value);
+                        this.settings[key] = val;
+                        this.storage.saveSettings(this.settings);
+                        this._syncSettingsInputs();
+                    });
+                };
+                bindRange('input-target-duration', 'targetDuration');
+                bindRange('input-winner-count', 'winnerCount');
+                bindRange('input-wave-size', 'waveSize');
+                bindRange('input-wave-advance', 'waveAdvanceCount');
+                bindRange('input-chaos-level', 'chaosLevel');
+                bindRange('input-sprint-intensity', 'sprintIntensity');
+                bindRange('input-comeback-boost', 'comebackBoost');
+
+                document.getElementById('input-stop-on-winners').addEventListener('change', (e) => {
+                    this.settings.stopOnWinners = e.target.checked;
+                    this.storage.saveSettings(this.settings);
+                });
+
+                document.getElementById('select-arena-mode').addEventListener('change', (e) => {
+                    this.settings.arenaMode = e.target.value;
+                    this.storage.saveSettings(this.settings);
+                });
+
+                document.getElementById('select-visual-theme').addEventListener('change', (e) => {
+                    this.settings.visualTheme = e.target.value;
+                    this.renderer3D.setTheme(this.settings.visualTheme);
+                    this.storage.saveSettings(this.settings);
+                });
+
+                document.getElementById('select-label-mode').addEventListener('change', (e) => {
+                    this.settings.labelMode = e.target.value;
+                    this.storage.saveSettings(this.settings);
+                });
+
+                // Audio Sliders
+                const bindAudioSlider = (id, labelId, channel) => {
+                    const slider = document.getElementById(id);
+                    slider.addEventListener('input', () => {
+                        const val = Number(slider.value);
+                        this.audio.volumes[channel] = val / 100;
+                        document.getElementById(labelId).textContent = `${val}%`;
+                    });
+                };
+                bindAudioSlider('input-vol-master', 'label-vol-master', 'master');
+                bindAudioSlider('input-vol-music', 'label-vol-music', 'music');
+                bindAudioSlider('input-vol-quack', 'label-vol-quack', 'quack');
+                bindAudioSlider('input-vol-sfx', 'label-vol-sfx', 'sfx');
+
+                const densitySlider = document.getElementById('input-quack-density');
+                if (densitySlider) {
+                    densitySlider.addEventListener('input', () => {
+                        const val = Number(densitySlider.value);
+                        this.audio.quackDensity = val;
+                        const dLabels = ['Normal', 'Ramai', 'Sangat Ramai'];
+                        document.getElementById('label-quack-density').textContent = dLabels[val - 1] || 'Sangat Ramai';
+                    });
+                }
+
+                document.getElementById('btn-test-audio').addEventListener('click', () => {
+                    this.audio.playWhistle();
+                    setTimeout(() => this.audio.playQuackChorus(4, 1.05), 200);
+                });
+
+                // Save Class Roster Preset
+                document.getElementById('btn-save-preset').addEventListener('click', () => {
+                    const nameInput = document.getElementById('input-preset-name');
+                    const presetName = nameInput.value.trim();
+                    if (!presetName) {
+                        ModalHelper.showToast('Masukkan nama kelas terlebih dahulu!');
+                        return;
+                    }
+                    const presets = this.storage.loadPresets();
+                    presets.unshift({
+                        id: 'preset_' + Date.now(),
+                        name: presetName,
+                        names: this.participantMgr.getAll().map(p => p.name)
+                    });
+                    this.storage.savePresets(presets);
+                    nameInput.value = '';
+                    this._renderPresetsList();
+                    ModalHelper.showToast(`Daftar kelas "${presetName}" disimpan!`);
+                });
+
+                // Results Modal Buttons
+                document.getElementById('btn-close-results').addEventListener('click', () => {
+                    document.getElementById('modal-results').classList.add('hidden');
+                    document.getElementById('modal-results').classList.remove('flex');
+                });
+
+                document.getElementById('btn-race-again').addEventListener('click', () => {
+                    this.resetRace();
+                    this.startCountdown();
+                });
+
+                document.getElementById('btn-next-wave').addEventListener('click', () => {
+                    this.advanceToNextWave();
+                });
+
+                document.getElementById('btn-results-to-settings').addEventListener('click', () => {
+                    document.getElementById('modal-results').classList.add('hidden');
+                    document.getElementById('modal-results').classList.remove('flex');
+                    openSettings();
+                });
+
+                document.getElementById('btn-copy-results').addEventListener('click', () => {
+                    const winners = this.simulation.finishedOrder.slice(0, this.settings.winnerCount);
+                    const lines = winners.map((w, i) => `Juara ${i + 1}: ${w.name} (${(w.finishTime || 0).toFixed(2)}s)`);
+                    const text = `🏆 HASIL DUCK RACE ARENA PRO\n` + lines.join('\n') + `\n— by Mas Alfy (MfyTech)`;
+                    const temp = document.createElement('textarea');
+                    temp.value = text;
+                    document.body.appendChild(temp);
+                    temp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(temp);
+                    ModalHelper.showToast('Hasil pemenang disalin ke clipboard!');
+                });
+
+                // History Modal
+                const historyModal = document.getElementById('modal-history');
+                document.getElementById('btn-open-history').addEventListener('click', () => {
+                    this._renderHistoryList();
+                    historyModal.classList.remove('hidden');
+                    historyModal.classList.add('flex');
+                });
+                document.getElementById('btn-close-history').addEventListener('click', () => {
+                    historyModal.classList.add('hidden');
+                    historyModal.classList.remove('flex');
+                });
+                document.getElementById('btn-clear-history').addEventListener('click', () => {
+                    ModalHelper.confirm({
+                        title: 'Hapus Riwayat Balapan?',
+                        message: 'Semua catatan riwayat pemenang sebelumnya akan dihapus.',
+                        onConfirm: () => {
+                            this.storage.saveHistory([]);
+                            this._renderHistoryList();
+                            ModalHelper.showToast('Riwayat balapan dibersihkan.');
+                        }
+                    });
+                });
+            }
+
+            _syncSettingsInputs() {
+                document.getElementById('input-target-duration').value = this.settings.targetDuration;
+                document.getElementById('label-target-duration').textContent = `${this.settings.targetDuration} Detik`;
+
+                document.getElementById('input-winner-count').value = this.settings.winnerCount;
+                document.getElementById('label-winner-count').textContent = `${this.settings.winnerCount} Juara`;
+
+                document.getElementById('input-wave-size').value = this.settings.waveSize;
+                document.getElementById('label-wave-size').textContent = `${this.settings.waveSize} Bebek`;
+
+                document.getElementById('input-wave-advance').value = this.settings.waveAdvanceCount;
+                document.getElementById('label-wave-advance').textContent = `${this.settings.waveAdvanceCount} Bebek`;
+
+                const labels = ['Rendah', 'Tinggi', 'Ekstrem'];
+                document.getElementById('label-chaos-level').textContent = labels[(this.settings.chaosLevel || 2) - 1];
+                document.getElementById('label-sprint-intensity').textContent = labels[(this.settings.sprintIntensity || 2) - 1];
+                document.getElementById('label-comeback-boost').textContent = labels[(this.settings.comebackBoost || 2) - 1];
+
+                document.getElementById('select-arena-mode').value = this.settings.arenaMode;
+                document.getElementById('select-visual-theme').value = this.settings.visualTheme;
+                document.getElementById('select-label-mode').value = this.settings.labelMode;
+            }
+
+            _renderParticipantsList() {
+                const container = document.getElementById('participants-list-container');
+                const filter = document.getElementById('input-filter-participants').value.trim().toLowerCase();
+                const all = this.participantMgr.getAll();
+
+                document.getElementById('list-total-count').textContent = all.length;
+                document.getElementById('tab-count-badge').textContent = all.length;
+
+                const filtered = filter ? all.filter(p => p.name.toLowerCase().includes(filter)) : all;
+
+                // Render up to 150 items directly in DOM for snappy performance, with summary if more
+                const visibleSlice = filtered.slice(0, 150);
+                container.innerHTML = visibleSlice.map((p, idx) => `
+                    <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-navy-950/75 border border-white/10 hover:border-cyan/40">
+                        <div class="flex items-center gap-2.5 truncate flex-1 cursor-pointer" data-edit-id="${p.id}">
+                            <span class="w-6 h-6 rounded-lg bg-navy-800 text-slate-400 font-display font-bold text-xs flex items-center justify-center shrink-0">${idx + 1}</span>
+                            <span class="text-xs md:text-sm font-semibold text-white truncate">${this._escapeHTML(p.name)}</span>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button data-edit-id="${p.id}" class="w-7 h-7 rounded-lg bg-navy-800 hover:bg-cyan/20 text-cyan text-xs flex items-center justify-center" title="Edit Nama">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button data-del-id="${p.id}" class="w-7 h-7 rounded-lg bg-navy-800 hover:bg-coral/20 text-coral text-xs flex items-center justify-center" title="Hapus">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('') + (filtered.length > 150 ? `<div class="text-center text-xs text-slate-400 py-2">+ ${filtered.length - 150} peserta lainnya siap di memori balapan</div>` : '');
+
+                container.querySelectorAll('[data-edit-id]').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const id = el.getAttribute('data-edit-id');
+                        const item = this.participantMgr.getAll().find(x => x.id === id);
+                        if (!item) return;
+                        ModalHelper.confirm({
+                            title: 'Edit Nama Peserta',
+                            message: 'Ubah nama peserta untuk label bebek 3D:',
+                            inputDefault: item.name,
+                            onConfirm: (newVal) => {
+                                if (this.participantMgr.updateName(id, newVal)) {
+                                    this._renderParticipantsList();
+                                    ModalHelper.showToast('Nama diperbarui!');
+                                }
+                            }
+                        });
+                    });
+                });
+
+                container.querySelectorAll('[data-del-id]').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const id = el.getAttribute('data-del-id');
+                        this.participantMgr.removeOne(id);
+                        this._renderParticipantsList();
+                    });
+                });
+            }
+
+            _renderPresetsList() {
+                const container = document.getElementById('saved-presets-list');
+                const presets = this.storage.loadPresets();
+                container.innerHTML = presets.map(pr => `
+                    <div class="p-3.5 rounded-xl bg-navy-950/80 border border-white/10 flex items-center justify-between gap-2">
+                        <div class="truncate">
+                            <h4 class="font-display font-bold text-xs md:text-sm text-white truncate">${this._escapeHTML(pr.name)}</h4>
+                            <span class="text-[11px] text-cyan font-semibold">${pr.names.length} Peserta</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <button data-load-preset="${pr.id}" class="btn-game btn-emerald px-3 py-1.5 rounded-lg font-display font-extrabold text-xs">MUAT</button>
+                            <button data-del-preset="${pr.id}" class="btn-game btn-coral px-2.5 py-1.5 rounded-lg text-xs"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+
+                container.querySelectorAll('[data-load-preset]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.getAttribute('data-load-preset');
+                        const found = presets.find(p => p.id === id);
+                        if (found) {
+                            this.participantMgr.addBulk(found.names.join('\n'), true);
+                            this._renderParticipantsList();
+                            ModalHelper.showToast(`Kelas "${found.name}" dimuat!`);
+                        }
+                    });
+                });
+
+                container.querySelectorAll('[data-del-preset]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.getAttribute('data-del-preset');
+                        const updated = presets.filter(p => p.id !== id);
+                        this.storage.savePresets(updated);
+                        this._renderPresetsList();
+                    });
+                });
+            }
+
+            _renderHistoryList() {
+                const container = document.getElementById('history-list-container');
+                const history = this.storage.loadHistory();
+                if (history.length === 0) {
+                    container.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Belum ada riwayat balapan yang tercatat.</div>`;
+                    return;
+                }
+                container.innerHTML = history.map(h => `
+                    <div class="glass-card p-3.5 rounded-2xl border border-white/10 space-y-2">
+                        <div class="flex flex-wrap items-center justify-between gap-1 border-b border-white/10 pb-1.5 text-xs">
+                            <span class="font-display font-bold text-cyan">${this._escapeHTML(h.roundLabel)} (${h.totalParticipants} Bebek)</span>
+                            <span class="text-slate-400">${this._escapeHTML(h.timestamp)}</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            ${h.winners.map(w => `
+                                <span class="px-2.5 py-1 rounded-lg bg-navy-950 border border-white/10 text-xs font-semibold">
+                                    <strong class="text-duck">#${w.rank}</strong> ${this._escapeHTML(w.name)} <span class="text-emerald-400">(${w.time})</span>
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            _escapeHTML(str) {
+                return String(str).replace(/[&<>"']/g, m => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[m]));
+            }
+        }
+
+        // Start Application on Window Load
+        window.onload = function () {
+            window.duckArenaApp = new DuckRaceController();
+        };
+    </script>
+</body>
+</html>
